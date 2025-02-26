@@ -1,0 +1,4 @@
+# Completely exclude build folder.
+build/
+install/
+.vs/

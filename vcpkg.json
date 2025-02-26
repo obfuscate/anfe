@@ -1,0 +1,9 @@
+{
+	"$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+	"name": "anfe",
+	"version-string": "dev",
+	"description": "Anoter Fucking Engine.",
+	"license": "MIT",
+	"dependencies": [
+	]
+}
