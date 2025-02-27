@@ -41,6 +41,8 @@ function(set_library target)
 
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX "Sources" FILES ${sources} ${headers})
 	source_group(TREE ${binary_dir}/generated/cxx PREFIX "Sources" FILES ${binary_dir}/generated/cxx/${target}/export.h)
+	
+	target_precompile_headers(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/${target}/pch.h")
 
 	set_output(${target})
 endfunction()
