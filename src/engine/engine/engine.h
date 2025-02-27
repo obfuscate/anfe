@@ -9,7 +9,7 @@ class ENGINE_API Engine final
 public:
 	Engine() = default;
 
-	bool initialize();
+	bool initialize(const int argc, const char* const argv[]);
 	void run();
 
 private:

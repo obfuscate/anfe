@@ -1,25 +1,20 @@
 #include <engine/engine.h>
 
-#include <ufbx/ufbx.h>
-
-#include <iostream>
+#include <argh/argh.h>
+#include <fmt/core.h>
 
 namespace engine
 {
 
-bool Engine::initialize()
+bool Engine::initialize(const int argc, const char* const argv[])
 {
-	ufbx_load_opts opts = { 0 };
-	ufbx_error error;
-	[[maybe_unused]] ufbx_scene* scene = ufbx_load_file("thing.fbx", &opts, &error);
-
-	std::cout << "Initialize" << std::endl;
+	fmt::println("Initialize!");
 	return true;
 }
 
 void Engine::run()
 {
-	std::cout << "Run!" << std::endl;
+	fmt::println("Run!");
 }
 
 } //-- engine.

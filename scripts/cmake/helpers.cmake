@@ -44,3 +44,8 @@ function(set_library target)
 
 	set_output(${target})
 endfunction()
+
+function(load_3rdparty_library target lib_name)
+	find_package(${lib_name} CONFIG REQUIRED)
+	target_link_libraries(${target} PRIVATE ${lib_name}::${lib_name})
+endfunction()
