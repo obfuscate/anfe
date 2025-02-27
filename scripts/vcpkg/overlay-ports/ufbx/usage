@@ -1,0 +1,4 @@
+ufbx provides CMake targets:
+
+  find_package(ufbx CONFIG REQUIRED)
+  target_link_libraries(main_launcher PRIVATE ufbx::ufbx)
