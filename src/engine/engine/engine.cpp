@@ -6,16 +6,18 @@
 namespace engine
 {
 
+Engine& Engine::instance()
+{
+	static Engine s_engine;
+	return s_engine;
+}
+
 bool Engine::initialize(const int argc, const char* const argv[])
 {
-	m_services.push_back(std::make_unique<CLIService>(argc, argv));
-	m_services.push_back(std::make_unique<WindowsService>());
-
+	//-- ToDo: Think about ordering in plugins.
 	bool initialized = true;
-	for (auto& service : m_services)
-	{
-		initialized &= service->initialize();
-	}
+	initialized &= m_serviceManager.add<CLIService>(argc, argv);
+	initialized &= m_serviceManager.add<WindowsService>();
 
 	return initialized;
 }
@@ -31,6 +33,8 @@ void Engine::run()
 			}
 		}
 	}
+
+	m_serviceManager.release();
 }
 
 } //-- engine.

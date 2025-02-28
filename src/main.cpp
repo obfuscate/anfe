@@ -2,7 +2,7 @@
 
 int main(int argc, char* argv[])
 {
-	engine::Engine engine;
+	auto& engine = engine::instance();
 
 	if (!engine.initialize(argc, argv))
 	{

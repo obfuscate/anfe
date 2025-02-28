@@ -13,6 +13,7 @@
 			"name": "fmt",
 			"version>=": "11.0.2"
 		},
+		"rttr",
 		{
 			"name": "sdl3",
 			"version>=": "3.2.4"

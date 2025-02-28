@@ -57,6 +57,9 @@ target_compile_options(GlobalOptionsUnoptimized INTERFACE
 	/Od			# Disable optimizations
 )
 
+# Other options
+target_compile_options(GlobalOptions INTERFACE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
+
 add_executable(main_launcher src/main.cpp)
 
 # Set output folder.
