@@ -10,8 +10,11 @@ include(scripts/cmake/helpers.cmake)
 
 # Setup a global interface.
 add_library(GlobalOptions INTERFACE)
+add_library(GlobalOptionsOptimized INTERFACE)
+add_library(GlobalOptionsUnoptimized INTERFACE)
 target_compile_features(GlobalOptions INTERFACE cxx_std_17) # specify the C++ standard
 
+# C++ complie options.
 set(WIN_WARNINGS
 	/W4			# Warning level.
 	/WX			# Treat warnings as errors.
@@ -30,19 +33,36 @@ set(WIN_WARNINGS
 	/w45204		# Enable warning: A class with virtual functions has non-virtual trivial destructor.
 )
 
-# C++ compile options.
+# Linker options.
+set(WIN_COMPILE_LINKER_OPTIONS
+	/Gy			# Enable function level linking
+	/Gw			# Optimize Global Data
+	/GR-		# Disable Run-Time Type Information
+	/bigobj		# Increase number of sections in object files
+	/Oi			# Enable intrinsics, irrelevant of optimization level
+)
+
 target_compile_options(GlobalOptions INTERFACE $<$<CXX_COMPILER_ID:MSVC>:${WIN_WARNINGS}>)
-target_compile_options(GlobalOptions INTERFACE $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2>) # Maximum speed.
-target_compile_options(GlobalOptions INTERFACE $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/Ob2>) # Inline any suitable.
-target_compile_options(GlobalOptions INTERFACE $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/fp:fast>) # Fast math.
+target_compile_options(GlobalOptions INTERFACE $<$<CXX_COMPILER_ID:MSVC>:${WIN_COMPILE_LINKER_OPTIONS}>)
+
+target_compile_options(GlobalOptionsOptimized INTERFACE
+	/O2			# Maximum speed optimization.
+	/GF			#
+	/Ob2		# Any suitable inline.
+	/GS-		# 
+	/fp:fast	# Enable fast floating point arithmetics by default
+)
+
+target_compile_options(GlobalOptionsUnoptimized INTERFACE
+	/Od			# Disable optimizations
+)
 
 add_executable(main_launcher src/main.cpp)
 
 # Set output folder.
 set_output(main_launcher)
 
-# Inherit all global properties.
-target_link_libraries(main_launcher PRIVATE GlobalOptions)
+set_global_compile_options(main_launcher)
 
 set_directory_properties(PROPERTIES VS_STARTUP_PROJECT main_launcher)
 

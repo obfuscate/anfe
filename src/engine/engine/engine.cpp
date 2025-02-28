@@ -3,8 +3,6 @@
 #include <engine/services/windows_service.h>
 #include <engine/services/cli_service.h>
 
-#include <fmt/core.h>
-
 namespace engine
 {
 

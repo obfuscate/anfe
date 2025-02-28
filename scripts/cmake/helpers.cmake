@@ -19,6 +19,13 @@ function(set_output target)
 	)
 endfunction()
 
+# Set global compile options to a specified target.
+function(set_global_compile_options target)
+	target_link_libraries(${target} PRIVATE GlobalOptions)
+	target_link_libraries(${target} PRIVATE $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:GlobalOptionsOptimized>)
+	target_link_libraries(${target} PRIVATE $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:MSVC>>:GlobalOptionsUnoptimized>)
+endfunction()
+
 function(set_library target)
 	file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 	file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
@@ -27,7 +34,6 @@ function(set_library target)
 	target_sources(${target} PUBLIC ${headers} PRIVATE ${sources})
 
 	target_include_directories(${target} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-	target_link_libraries(${target} PRIVATE GlobalOptions)
 
 	string(TOUPPER ${target} target_upper)
 	get_target_property(binary_dir ${target} BINARY_DIR)
@@ -43,6 +49,8 @@ function(set_library target)
 	source_group(TREE ${binary_dir}/generated/cxx PREFIX "Sources" FILES ${binary_dir}/generated/cxx/${target}/export.h)
 	
 	target_precompile_headers(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/${target}/pch.h")
+
+	set_global_compile_options(${target})
 
 	set_output(${target})
 endfunction()
