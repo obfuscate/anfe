@@ -19,19 +19,21 @@ RTTR_REGISTRATION
 
 } //-- unnamed.
 
+
 WindowsService::WindowsService()
 	: Service()
 	, m_mainWindow(nullptr, &SDL_DestroyWindow) {}
 
+
 bool WindowsService::initialize()
 {
-	int32_t width = 1024;
-	int32_t height = 768;
-	SDL_WindowFlags flags = 0;
+	SDL_InitFlags initFlags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
+	SDL_Init(initFlags);
 
 	auto& parser = engine::instance().serviceManager().get<CLIService>().parser();
 	std::string s;
 
+	SDL_WindowFlags flags = 0;
 	//-- Handle window mode.
 	parser("-wm") >> s;
 	{
@@ -46,6 +48,8 @@ bool WindowsService::initialize()
 	}
 
 	//-- Handle resolution.
+	int32_t width = 1024;
+	int32_t height = 768;
 	parser("-res", "1024x768") >> s;
 	{
 		auto pos = s.find("x");
@@ -62,9 +66,11 @@ bool WindowsService::initialize()
 	return initialized;
 }
 
+
 void WindowsService::release()
 {
 	m_mainWindow.reset();
+	SDL_Quit();
 }
 
 } //-- engine.

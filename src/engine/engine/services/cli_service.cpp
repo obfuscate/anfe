@@ -6,11 +6,23 @@
 namespace engine
 {
 
+namespace
+{
+
+RTTR_REGISTRATION
+{
+	reflection::Service<CLIService>("CLIService");
+}
+
+} //-- unnamed.
+
+
 CLIService::CLIService(const int argc, const char* const argv[])
 	: Service()
 	, m_parser()
 	, m_argv(argv)
 	, m_argc(argc) { }
+
 
 bool CLIService::initialize()
 {

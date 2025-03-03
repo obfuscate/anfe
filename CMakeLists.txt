@@ -52,6 +52,7 @@ target_compile_options(GlobalOptionsOptimized INTERFACE
 	/GS-		# 
 	/fp:fast	# Enable fast floating point arithmetics by default
 )
+target_compile_definitions(GlobalOptionsOptimized INTERFACE DISABLE_ASSERTS)
 
 target_compile_options(GlobalOptionsUnoptimized INTERFACE
 	/Od			# Disable optimizations

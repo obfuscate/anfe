@@ -13,3 +13,4 @@
 #include <engine/utils/family.h>
 #include <engine/utils/noncopyable.h>
 #include <engine/engine.h>
+#include <engine/assert.h>
