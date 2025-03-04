@@ -1,7 +1,6 @@
 #pragma once
 
 #include <engine/export.h>
-#include <engine/pch.h>
 #include <engine/reflection/common.h>
 
 namespace engine::reflection

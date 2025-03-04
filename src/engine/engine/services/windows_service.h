@@ -1,10 +1,7 @@
 #pragma once
-#include <engine/export.h>
-#include <engine/pch.h>
+
 #include <engine/services/service_manager.h>
 #include <engine/reflection/common.h>
-
-#include <SDL3/SDL.h>
 
 namespace engine
 {
@@ -19,10 +16,14 @@ public:
 	bool initialize() override;
 	void release() override;
 
-private:
-	using WindowPtr = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>;
+	LLGL::Window& window()
+	{
+		ENGINE_ASSERT_DEBUG(m_swapChain != nullptr, "SwapChain is null");
+		return LLGL::CastTo<LLGL::Window>(m_swapChain->GetSurface());
+	}
 
-	WindowPtr m_mainWindow;
+private:
+	LLGL::SwapChain* m_swapChain = nullptr;
 };
 
 } //-- engine.

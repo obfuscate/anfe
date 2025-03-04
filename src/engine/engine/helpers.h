@@ -1,14 +1,13 @@
 #pragma once
-#include <engine/pch.h>
 #include <engine/engine.h>
 #include <engine/services/log_service.h>
 
 namespace engine
 {
 
-inline spdlog::logger& logger()
+inline LogService& logger()
 {
-	return *spdlog::default_logger();
+	return instance().serviceManager().get<LogService>();
 }
 
 } //-- engine::helpers.

@@ -39,7 +39,7 @@ bool CLIService::initialize()
 		}
 	}
 
-	const int flags = argh::parser::PREFER_PARAM_FOR_UNREG_OPTION;
+	const int flags = argh::parser::PREFER_FLAG_FOR_UNREG_OPTION;
 	m_parser.parse(m_argc, m_argv, flags);
 
 #if OUTPUT_DEBUG_CLI

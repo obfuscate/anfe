@@ -13,11 +13,16 @@
 			"name": "fmt",
 			"version>=": "11.0.2"
 		},
-		"rttr",
 		{
-			"name": "sdl3",
-			"version>=": "3.2.4"
+			"name": "libassert",
+			"version>=": "2.1.4"
 		},
+		{
+			"name": "llgl",
+			"version>=": "0.0.4",
+			"features": [ "direct3d12", "vulkan" ]
+		},
+		"rttr",
 		{
 			"name" : "spdlog",
 			"version>=": "1.15.1"

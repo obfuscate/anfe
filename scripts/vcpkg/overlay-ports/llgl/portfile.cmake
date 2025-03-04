@@ -1,0 +1,47 @@
+
+vcpkg_from_github(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO LukasBanana/LLGL
+    REF f1ccdf9d8f40a19804c7f69dfb34e89912c382e2
+    SHA512 87e818d047b8096ab5b3f5da7754c20176d2c78952ce2a3f166b91b59e1e8fcd2fd9e93704232008901bd03ad8c2f2af314a18a91e4f6db9846b9c91db7c1e8b
+    HEAD_REF master
+)
+
+vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
+  FEATURES
+    opengl     LLGL_BUILD_RENDERER_OPENGL
+    opengl     LLGL_BUILD_RENDERER_OPENGL_ES3
+    direct3d11 LLGL_BUILD_RENDERER_DIRECT3D11
+    direct3d12 LLGL_BUILD_RENDERER_DIRECT3D12
+    metal      LLGL_BUILD_RENDERER_METAL
+    vulkan     LLGL_BUILD_RENDERER_VULKAN
+)
+
+if(VCPKG_TARGET_IS_IOS OR VCPKG_TARGET_IS_ANDROID)
+    set(maybe_unused "LLGL_BUILD_RENDERER_OPENGL")
+else()
+    set(maybe_unused "LLGL_BUILD_RENDERER_OPENGL_ES3")
+endif()
+
+string(COMPARE EQUAL "${VCPKG_LIBRARY_LINKAGE}" "static" LLGL_BUILD_STATIC_LIB)
+
+vcpkg_cmake_configure(
+    SOURCE_PATH "${SOURCE_PATH}"
+    MAYBE_UNUSED_VARIABLES ${maybe_unused}
+    OPTIONS
+        ${FEATURE_OPTIONS}
+        -DLLGL_BUILD_STATIC_LIB=${LLGL_BUILD_STATIC_LIB}
+)
+
+vcpkg_cmake_install()
+vcpkg_cmake_config_fixup(CONFIG_PATH lib/cmake/LLGL)
+file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include")
+
+if(VCPKG_LIBRARY_LINKAGE STREQUAL static)
+file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/bin" "${CURRENT_PACKAGES_DIR}/debug/bin")
+endif()
+
+vcpkg_copy_pdbs()
+
+# Handle copyright
+file(INSTALL "${SOURCE_PATH}/LICENSE.txt" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)

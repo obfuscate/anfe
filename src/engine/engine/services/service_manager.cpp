@@ -3,11 +3,20 @@
 namespace engine
 {
 
-void ServiceManager::release()
+void ServiceManager::tick()
 {
 	for (auto& service : m_services)
 	{
-		service->release();
+		service->tick();
+	}
+}
+
+
+void ServiceManager::release()
+{
+	for (auto it = m_services.rbegin(); it != m_services.rend(); ++it)
+	{
+		it->release();
 	}
 }
 

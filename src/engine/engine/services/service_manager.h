@@ -1,6 +1,8 @@
 #pragma once
-#include <engine/export.h>
-#include <engine/pch.h>
+
+#include <engine/assert.h>
+#include <engine/utils/noncopyable.h>
+#include <engine/utils/family.h>
 #include <engine/reflection/common.h>
 
 namespace engine
@@ -16,6 +18,7 @@ public:
 
 	virtual bool initialize() = 0;
 	virtual void release() {}
+	virtual void tick() {}
 
 	Type typeId() const { return m_typeId; }
 
@@ -45,11 +48,11 @@ public:
 class ServiceManager final
 {
 public:
+
 	template<typename TService, typename... Args>
 	bool add(Args&&... args)
 	{
 		static_assert(std::is_base_of_v<IService, TService>, "Your class has to be inherited from IService!");
-
 		auto serviceId = TService::fetchId();
 		if (m_services.size() <= serviceId)
 		{
@@ -61,15 +64,24 @@ public:
 	}
 
 	template<typename TService>
-	TService& get()
+	TService* find()
 	{
 		static_assert(std::is_base_of_v<IService, TService>, "Your class has to be inherited from IService!");
 
 		auto serviceId = TService::fetchId(); //-- It uses mutex inside.
-		assert(serviceId < m_services.size() && "ServiceId is wrong!");
-		return static_cast<TService&>(*m_services[serviceId]);
+		ENGINE_ASSERT_DEBUG(serviceId < static_cast<IService::Type>(m_services.size()), "ServiceId is wrong!");
+		return static_cast<TService*>(m_services[serviceId].get());
 	}
 
+	template<typename TService>
+	TService& get()
+	{
+		TService* service = find<TService>();
+		ENGINE_ASSERT_DEBUG(service != nullptr, "There isn't such service");
+		return *service;
+	}
+
+	void tick();
 	void release();
 
 private:
