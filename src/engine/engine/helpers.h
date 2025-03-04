@@ -1,5 +1,4 @@
 #pragma once
-#include <engine/pch.h>
 #include <engine/engine.h>
 #include <engine/services/log_service.h>
 

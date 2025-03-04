@@ -40,10 +40,41 @@ set(WIN_COMPILE_LINKER_OPTIONS
 	/GR-		# Disable Run-Time Type Information
 	/bigobj		# Increase number of sections in object files
 	/Oi			# Enable intrinsics, irrelevant of optimization level
+	/Zi
 )
 
 target_compile_options(GlobalOptions INTERFACE $<$<CXX_COMPILER_ID:MSVC>:${WIN_WARNINGS}>)
 target_compile_options(GlobalOptions INTERFACE $<$<CXX_COMPILER_ID:MSVC>:${WIN_COMPILE_LINKER_OPTIONS}>)
+
+set(MSVC_DEFINES
+	# Use Unicode character set
+	_UNICODE
+	UNICODE
+
+	# Disable MSVC specific security warnings
+	_CRT_SECURE_NO_DEPRECATE
+	_CRT_NONSTDC_NO_DEPRECATE
+
+	# Never bring useless stuff from windows.h
+	WIN32_LEAN_AND_MEAN
+	NOMINMAX
+	
+	_CONSOLE
+)
+
+set(DEFINES
+	LIBASSERT_USE_FMT
+)
+
+# Global preprocessor definitions
+target_compile_definitions(GlobalOptions INTERFACE $<$<CXX_COMPILER_ID:MSVC>:${MSVC_DEFINES}>)
+target_compile_definitions(GlobalOptions INTERFACE ${DEFINES})
+
+target_link_options(GlobalOptions INTERFACE
+	/INCREMENTAL:NO		# Disable incremental linking
+	/CGTHREADS:8		# Sets number of cl.exe threads to use for optimization and code generation
+	/OPT:REF,ICF=3		# Enable the optimizations that LINK performs during a build
+)
 
 target_compile_options(GlobalOptionsOptimized INTERFACE
 	/O2			# Maximum speed optimization.
@@ -52,6 +83,7 @@ target_compile_options(GlobalOptionsOptimized INTERFACE
 	/GS-		# 
 	/fp:fast	# Enable fast floating point arithmetics by default
 )
+
 target_compile_definitions(GlobalOptionsOptimized INTERFACE DISABLE_ASSERTS)
 
 target_compile_options(GlobalOptionsUnoptimized INTERFACE
@@ -72,3 +104,7 @@ set_directory_properties(PROPERTIES VS_STARTUP_PROJECT main_launcher)
 
 # Other libraries.
 link_library(main_launcher engine "src/engine")
+
+# Default CLI.
+set_target_properties(main_launcher PROPERTIES 
+    VS_DEBUGGER_COMMAND_ARGUMENTS "--gapi dx12 -logstd")

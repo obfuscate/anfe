@@ -47,8 +47,8 @@ function(set_library target)
 
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX "Sources" FILES ${sources} ${headers})
 	source_group(TREE ${binary_dir}/generated/cxx PREFIX "Sources" FILES ${binary_dir}/generated/cxx/${target}/export.h)
-	
-	target_precompile_headers(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/${target}/pch.h")
+
+	target_precompile_headers(${target} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${target}/pch.h")
 
 	set_global_compile_options(${target})
 
@@ -57,5 +57,5 @@ endfunction()
 
 function(load_3rdparty_library target lib_name)
 	find_package(${lib_name} CONFIG REQUIRED)
-	target_link_libraries(${target} PRIVATE ${lib_name}::${lib_name})
+	target_link_libraries(${target} PUBLIC ${lib_name}::${lib_name})
 endfunction()

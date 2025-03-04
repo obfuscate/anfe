@@ -1,0 +1,4 @@
+LLGL provides CMake targets:
+
+  find_package(LLGL CONFIG REQUIRED)
+  target_link_libraries(main_launcher PRIVATE LLGL::LLGL)
