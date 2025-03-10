@@ -2,6 +2,8 @@
 #include <engine/engine.h>
 #include <engine/reflection/registration.h>
 #include <engine/services/cli_service.h>
+#include <engine/services/imgui_service.h>
+#include <engine/services/input_service.h>
 #include <engine/services/render_service.h>
 
 namespace engine
@@ -28,23 +30,8 @@ public:
 
 	void OnResize(LLGL::Window& sender, const LLGL::Extent2D& clientAreaSize) override
 	{
-		if (clientAreaSize.width >= 4 && clientAreaSize.height >= 4)
-		{
-			const auto& resolution = clientAreaSize;
-
-			// Update swap buffers
-			m_swapChain->ResizeBuffers(resolution);
-			m_swapChain->Present();
-
-			//-- Notify application about resize event
-			//app_.OnResize(resolution);
-
-			// Re-draw frame
-			//if (app_.IsLoadingDone())
-			//	app_.DrawFrame();
-		}
+		m_swapChain->ResizeBuffers(clientAreaSize);
 	}
-
 
 	void OnUpdate(LLGL::Window& sender) override
 	{
@@ -52,6 +39,15 @@ public:
 		// Re-draw frame
 		/*if (app_.IsLoadingDone())
 			app_.DrawFrame();*/
+	}
+
+	void OnLocalMotion(LLGL::Window& sender, const LLGL::Offset2D& position) override
+	{
+		auto* context = static_cast<ImGUIService::Backend::WindowContext*>(sender.GetUserData());
+		if (context != nullptr)
+		{
+			context->mousePosInWindow = position;
+		}
 	}
 
 private:
@@ -62,13 +58,12 @@ private:
 
 
 WindowsService::WindowsService()
-	: Service()
-	/*, m_mainWindow(nullptr, &SDL_DestroyWindow)*/ { }
+	: Service() { }
 
 
 bool WindowsService::initialize()
 {
-	auto& parser = engine::instance().serviceManager().get<CLIService>().parser();
+	auto& parser = engine::engine().serviceManager().get<CLIService>().parser();
 	std::string s;
 
 	//-- Handle window mode.
@@ -97,22 +92,10 @@ bool WindowsService::initialize()
 		height = std::stoi(sHeight);
 	}
 
-	auto& rs = instance().serviceManager().get<RenderService>();
-	m_swapChain = rs.swapChain();
-
-	// Set window title
-	auto& wnd = window();
-
+	auto& rs = engine().serviceManager().get<RenderService>();
 	auto gapiName = rttr::type::get<GraphicsAPI>().get_enumeration().value_to_name(rs.gapi());
-	wnd.SetTitle(fmt::format("AnFE ({})", gapiName));
-
-	//-- Add window resize listener
-	wnd.AddEventListener(std::make_shared<WindowEventHandler>(m_swapChain));
-	//-- By some reasons it doesn't work. Perhaps need to call Present();
-	wnd.PostResize(LLGL::Extent2D(width, height));
-	//m_swapChain->ResizeBuffers();
-
-	wnd.Show();
+	m_mainWindow = createWindow(fmt::format("AnFE ({})", gapiName), static_cast<uint16_t>(width), static_cast<uint16_t>(height));
+	m_mainWindow->window().Show();
 
 	return true;
 }
@@ -121,6 +104,29 @@ bool WindowsService::initialize()
 void WindowsService::release()
 {
 
+}
+
+
+WindowsService::WindowWrapper* WindowsService::createWindow(std::string_view name, const uint16_t width, const uint16_t height)
+{
+	auto& rs = engine().serviceManager().get<RenderService>();
+	auto* swapChain = rs.createSwapChain(width, height, name);
+
+	m_windows.push_back(std::make_unique<WindowWrapper>(swapChain));
+	auto* wrapper = m_windows.back().get();
+	//-- Set window title
+	auto& wnd = wrapper->window();
+
+	wnd.SetTitle(name.data());
+
+	//-- Add window resize listener
+	//-- ToDo: Create only one window event handler and reuse it. User data might be get from LLGL::Window::GetUserData.
+	wnd.AddEventListener(std::make_shared<WindowEventHandler>(wrapper->swapChain));
+
+	//-- Listen for window/canvas events.
+	engine().serviceManager().get<InputService>().registerWindow(swapChain->GetSurface());
+
+	return wrapper;
 }
 
 } //-- engine.

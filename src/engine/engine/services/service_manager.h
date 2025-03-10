@@ -4,6 +4,7 @@
 #include <engine/utils/noncopyable.h>
 #include <engine/utils/family.h>
 #include <engine/reflection/common.h>
+#include <engine/time.h>
 
 namespace engine
 {
@@ -19,6 +20,7 @@ public:
 	virtual bool initialize() = 0;
 	virtual void release() {}
 	virtual void tick() {}
+	virtual void postTick() {}
 
 	Type typeId() const { return m_typeId; }
 

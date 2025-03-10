@@ -8,7 +8,7 @@ namespace engine
 enum class GraphicsAPI : uint8_t
 {
 	DirectX12 = 0,
-	Vulkan,
+	//-- ToDo: Add Vulkan later.
 	Unknown
 };
 
@@ -21,6 +21,8 @@ public:
 	{
 	public:
 		CommandList* requestCommandList();
+		//-- ToDo: Remove later.
+		CommandList* imguiCommandList() { return m_imguiCommandList; }
 
 	private:
 		void initialize(LLGL::RenderSystem* renderer);
@@ -31,6 +33,7 @@ public:
 	private:
 		LLGL::RenderSystem* m_renderer = nullptr;
 		LLGL::CommandBuffer* m_commandList = nullptr;
+		LLGL::CommandBuffer* m_imguiCommandList = nullptr;
 		LLGL::CommandQueue* m_commandQueue = nullptr;
 	};
 
@@ -41,22 +44,28 @@ public:
 	bool initialize() override;
 	void release() override;
 
-	void tick() override;
+	void postTick() override;
 
 	GraphicsAPI gapi() const { return m_gapi; }
 
-	LLGL::SwapChain* swapChain() { return m_swapChain; }
+	LLGL::RenderSystem* renderer() { return m_renderer.get(); }
 	LLGL::RenderingDebugger* debugger() { return m_debugger.get(); }
-
+	
 	CommandListPool& commandListPool() { return m_commandListPool; }
+
+	LLGL::SwapChain* createSwapChain(const uint16_t width, const uint16_t height, std::string_view debugName = "swapChain");
+
+private:
+	bool isAnyWindowOpen();
 
 private:
 	using DebuggerPtr = std::unique_ptr<LLGL::RenderingDebugger>;
+	using SwapChains = std::vector<LLGL::SwapChain*>;
 
 	CommandListPool m_commandListPool;
+	SwapChains m_swapChains;
 	LLGL::RenderSystemPtr m_renderer;
 	DebuggerPtr m_debugger;
-	LLGL::SwapChain* m_swapChain = nullptr;
 	GraphicsAPI m_gapi = GraphicsAPI::Unknown;
 };
 

@@ -1,5 +1,6 @@
 #include <engine/services/log_service.h>
 #include <engine/engine.h>
+#include <engine/helpers.h>
 #include <engine/services/cli_service.h>
 #include <engine/reflection/registration.h>
 
@@ -28,7 +29,7 @@ inline constexpr std::string_view kPattern = "[%H:%M:%S:%e] [thread %5t] %^[%L] 
 
 bool LogService::initialize()
 {
-	auto& cli = instance().serviceManager().get<CLIService>().parser();
+	auto& cli = service<CLIService>().parser();
 
 	spdlog::filename_t filename;
 	cli("--logfile", "logs/log.txt") >> filename;

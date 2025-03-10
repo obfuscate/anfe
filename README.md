@@ -7,6 +7,7 @@
 ## 3rd party libs
 * argh
 * fmt
+* imgui
 * libassert
 * LLGL
 * RTTR

@@ -10,20 +10,35 @@ namespace engine
 class WindowsService final : public Service<WindowsService>
 {
 public:
+	class WindowWrapper
+	{
+	public:
+		WindowWrapper(LLGL::SwapChain* swapChain)
+			: swapChain(swapChain) { }
+
+		LLGL::Window& window()
+		{
+			ENGINE_ASSERT_DEBUG(swapChain != nullptr, "SwapChain is null");
+			return LLGL::CastTo<LLGL::Window>(swapChain->GetSurface());
+		}
+
+	public:
+		LLGL::SwapChain* swapChain = nullptr;
+	};
+
+public:
 	WindowsService();
 	~WindowsService() = default;
 
 	bool initialize() override;
 	void release() override;
 
-	LLGL::Window& window()
-	{
-		ENGINE_ASSERT_DEBUG(m_swapChain != nullptr, "SwapChain is null");
-		return LLGL::CastTo<LLGL::Window>(m_swapChain->GetSurface());
-	}
+	WindowWrapper* createWindow(std::string_view name, const uint16_t width, const uint16_t height);
+	WindowWrapper* mainWindow() { return m_mainWindow; }
 
 private:
-	LLGL::SwapChain* m_swapChain = nullptr;
+	std::vector<std::unique_ptr<WindowWrapper>> m_windows;
+	WindowWrapper* m_mainWindow;
 };
 
 } //-- engine.

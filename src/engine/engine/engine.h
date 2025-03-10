@@ -28,7 +28,7 @@ private:
 };
 
 //-- Helper to avoid redundant Engine::
-inline Engine& instance()
+inline Engine& engine()
 {
 	return Engine::instance();
 }

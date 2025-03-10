@@ -1,13 +1,25 @@
 #include <engine/services/world_service.h>
 #include <engine/engine.h>
+#include <engine/helpers.h>
 #include <engine/reflection/registration.h>
 #include <engine/services/render_service.h>
+#include <engine/services/windows_service.h>
+
+#include <imgui.h>
+#include <string_view>
+
+using namespace std::string_view_literals;
+using namespace entt::literals;
 
 namespace engine
 {
 
 namespace
 {
+/*reflectionMetaInitialization = []() -> void
+{
+	entt::meta_factory<WorldService>{}.type("WorldService"_hs);
+} ();*/
 
 RTTR_REGISTRATION
 {
@@ -31,9 +43,10 @@ void WorldService::release()
 
 void WorldService::tick()
 {
-	auto& rs = instance().serviceManager().get<RenderService>();
+
+	auto& rs = service<RenderService>();
 	auto* commandList = rs.commandListPool().requestCommandList();
-	auto& swapChain = *rs.swapChain();
+	auto& swapChain = *service<WindowsService>().mainWindow()->swapChain;
 	commandList->Begin(); //-- ToDo: move to requestCommandList().
 	{
 		// Bind common input assembly
@@ -46,6 +59,7 @@ void WorldService::tick()
 			commandList->SetViewport(swapChain.GetResolution());
 			//RenderScene();
 		}
+
 		commandList->EndRenderPass();
 	}
 	commandList->End(); //-- ToDo: Move to submitCommandLists();

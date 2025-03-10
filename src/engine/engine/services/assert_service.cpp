@@ -1,5 +1,6 @@
 #include <engine/services/assert_service.h>
 #include <engine/engine.h>
+#include <engine/helpers.h>
 #include <engine/reflection/registration.h>
 #include <engine/services/log_service.h>
 
@@ -17,7 +18,7 @@ RTTR_REGISTRATION
 
 void handler(const libassert::assertion_info& info)
 {
-	auto logService = instance().serviceManager().find<LogService>();
+	auto logService = findService<LogService>();
 	if (logService && info.message)
 	{
 		logService->critical(info.message.value());

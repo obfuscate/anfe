@@ -5,8 +5,6 @@
 #include <engine/services/input_service.h>
 #include <engine/services/windows_service.h>
 
-#include <LLGL/Utils/TypeNames.h>
-
 namespace engine
 {
 
@@ -17,8 +15,7 @@ RTTR_REGISTRATION
 {
 	rttr::registration::enumeration<GraphicsAPI>("GraphicsAPI")
 	(
-		rttr::value("dx12", GraphicsAPI::DirectX12),
-		rttr::value("vk", GraphicsAPI::Vulkan)
+		rttr::value("dx12", GraphicsAPI::DirectX12)
 	);
 
 	reflection::Service<RenderService>("RenderService")
@@ -67,6 +64,7 @@ void RenderService::CommandListPool::initialize(LLGL::RenderSystem* renderer)
 		//	cmdBufferDesc.flags = LLGL::CommandBufferFlags::ImmediateSubmit;
 	}
 	m_commandList = m_renderer->CreateCommandBuffer(cmdBufferDesc);
+	m_imguiCommandList = m_renderer->CreateCommandBuffer(cmdBufferDesc);
 
 	// Get command queue
 	m_commandQueue = m_renderer->GetCommandQueue();
@@ -76,12 +74,13 @@ void RenderService::CommandListPool::initialize(LLGL::RenderSystem* renderer)
 void RenderService::CommandListPool::submit()
 {
 	m_commandQueue->Submit(*m_commandList);
+	m_commandQueue->Submit(*m_imguiCommandList);
 }
 
 
 bool RenderService::initialize()
 {
-	auto& cli = instance().serviceManager().get<CLIService>().parser();
+	auto& cli = engine().serviceManager().get<CLIService>().parser();
 
 	//-- Select Graphics API.
 	m_gapi = GraphicsAPI::Unknown;
@@ -121,11 +120,6 @@ bool RenderService::initialize()
 		rendererDesc.moduleName = "Direct3D12";
 		break;
 	}
-	case GraphicsAPI::Vulkan:
-	{
-		rendererDesc.moduleName = "Vulkan";
-		break;
-	}
 	default:
 	{
 		ENGINE_FAIL("Incorrect Graphics API");
@@ -139,50 +133,20 @@ bool RenderService::initialize()
 		ENGINE_FAIL(fmt::format("Couldn't create a renderer. Error: {}", report.GetText()));
 	}
 
-	// Create swap-chain
-	LLGL::SwapChainDescriptor swapChainDesc;
-	{
-		swapChainDesc.debugName = "SwapChain";
-		swapChainDesc.resolution = scaleResolutionForDisplay(LLGL::Extent2D(1024, 768), LLGL::Display::GetPrimary());
-		//-- ToDo.
-		swapChainDesc.samples = std::min<std::uint32_t>(1, m_renderer->GetRenderingCaps().limits.maxColorBufferSamples);
-		swapChainDesc.resizable = true;
-		swapChainDesc.depthBits = 0; //-- Disable depth buffer.
-		swapChainDesc.stencilBits = 0; //-- Disable stencil buffer.
-	}
-	m_swapChain = m_renderer->CreateSwapChain(swapChainDesc);
-
-	m_swapChain->SetVsyncInterval(1); //-- ToDo: Pass via cli.
-
 	//-- Print renderer information
 	const LLGL::RendererInfo& info = m_renderer->GetRendererInfo();
-	const LLGL::Extent2D swapChainRes = m_swapChain->GetResolution();
 
-	logger().info(fmt::format("render system:\n"
+	logger().info(fmt::format("[RenderService]: render system:\n"
 		"  renderer:           {}\n"
 		"  device:             {}\n"
 		"  vendor:             {}\n"
 		"  shading language:   {}\n"
-		"\n"
-		"swap-chain:\n"
-		"  resolution:         {} x {}\n"
-		"  samples:            {}\n"
-		"  colorFormat:        {}\n"
-		"  depthStencilFormat: {}\n"
 		"\n",
 		info.rendererName.c_str(),
 		info.deviceName.c_str(),
 		info.vendorName.c_str(),
-		info.shadingLanguageName.c_str(),
-		swapChainRes.width,
-		swapChainRes.height,
-		m_swapChain->GetSamples(),
-		LLGL::ToString(m_swapChain->GetColorFormat()),
-		LLGL::ToString(m_swapChain->GetDepthStencilFormat()))
+		info.shadingLanguageName.c_str())
 	);
-	//samples_ = swapChain->GetSamples();
-
-	//m_renderer->GetNativeHandle();
 
 	m_commandListPool.initialize(m_renderer.get());
 
@@ -192,8 +156,11 @@ bool RenderService::initialize()
 
 void RenderService::release()
 {
-	m_renderer->Release(*m_swapChain);
-	m_swapChain = nullptr;
+	for (auto swapChain : m_swapChains)
+	{
+		m_renderer->Release(*swapChain);
+	}
+	m_swapChains.clear();
 
 	m_renderer.reset();
 	m_debugger.reset();
@@ -201,20 +168,11 @@ void RenderService::release()
 }
 
 
-void RenderService::tick()
+void RenderService::postTick()
 {
-	auto& sm = instance().serviceManager();
+	auto& sm = engine().serviceManager();
 	auto& is = sm.get<InputService>();
-	auto& ws = sm.get<WindowsService>();
 
-#ifndef LLGL_MOBILE_PLATFORM
-	//-- On desktop platforms, we also want to quit the app if the close button has been pressed
-	if (ws.window().HasQuit())
-	{
-		instance().stop();
-		return;
-	}
-#endif
 	//-- Update profiler (if debugging is enabled)
 	if (m_debugger)
 	{
@@ -262,10 +220,70 @@ void RenderService::tick()
 
 	m_commandListPool.submit();
 
-#ifndef LLGL_OS_IOS
-	// Present the result on the screen - cannot be explicitly invoked on mobile platforms
-	m_swapChain->Present();
-#endif
+	//-- Present the result on the screen - cannot be explicitly invoked on mobile platforms (#ifndef LLGL_OS_IOS)
+	for (auto swapChain : m_swapChains)
+	{
+		swapChain->Present();
+	}
+
+	//-- On desktop platforms, we also want to quit the app if the close button has been pressed (#ifndef LLGL_MOBILE_PLATFORM)
+	if (!isAnyWindowOpen())
+	{
+		engine().stop();
+		return;
+	}
+}
+
+
+LLGL::SwapChain* RenderService::createSwapChain(const uint16_t width, const uint16_t height, std::string_view debugName)
+{
+	LLGL::SwapChainDescriptor swapChainDesc;
+	{
+		swapChainDesc.debugName = debugName.data();
+		//-- ToDo: DO move scaleResolutionForDisplay out?
+		swapChainDesc.resolution = scaleResolutionForDisplay(LLGL::Extent2D(width, height), LLGL::Display::GetPrimary());
+		//-- ToDo.
+		swapChainDesc.samples = std::min<std::uint32_t>(1, m_renderer->GetRenderingCaps().limits.maxColorBufferSamples);
+		swapChainDesc.resizable = true;
+		swapChainDesc.depthBits = 0; //-- Disable depth buffer.
+		swapChainDesc.stencilBits = 0; //-- Disable stencil buffer.
+		swapChainDesc.swapBuffers = 2; //-- explicit setup.
+	}
+	auto swapChain = m_renderer->CreateSwapChain(swapChainDesc);
+
+	swapChain->SetVsyncInterval(1); //-- ToDo: Pass via cli or use settings.
+
+	m_swapChains.push_back(swapChain);
+
+	const LLGL::Extent2D swapChainRes = swapChain->GetResolution();
+	logger().info(fmt::format("[RenderService]: create new swap-chain:\n"
+		"  resolution:         {} x {}\n"
+		"  samples:            {}\n"
+		"  colorFormat:        {}\n"
+		"  depthStencilFormat: {}\n"
+		"\n",
+		swapChainRes.width,
+		swapChainRes.height,
+		swapChain->GetSamples(),
+		LLGL::ToString(swapChain->GetColorFormat()),
+		LLGL::ToString(swapChain->GetDepthStencilFormat()))
+	);
+
+	return swapChain;
+}
+
+
+bool RenderService::isAnyWindowOpen()
+{
+	for (LLGL::SwapChain* swapChain : m_swapChains)
+	{
+		auto& window = LLGL::CastTo<LLGL::Window>(swapChain->GetSurface());
+		if (window.IsShown())
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 } //-- engine.
