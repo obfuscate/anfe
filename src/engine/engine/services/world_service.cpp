@@ -8,25 +8,15 @@
 #include <imgui.h>
 #include <string_view>
 
-using namespace std::string_view_literals;
-using namespace entt::literals;
-
 namespace engine
 {
 
-namespace
+META_REGISTRATION
 {
-/*reflectionMetaInitialization = []() -> void
-{
-	entt::meta_factory<WorldService>{}.type("WorldService"_hs);
-} ();*/
+	using namespace std::string_view_literals;
 
-RTTR_REGISTRATION
-{
 	reflection::Service<WorldService>("WorldService");
 }
-
-} //-- unnamed.
 
 
 bool WorldService::initialize()
@@ -37,13 +27,11 @@ bool WorldService::initialize()
 
 void WorldService::release()
 {
-
 }
 
 
 void WorldService::tick()
 {
-
 	auto& rs = service<RenderService>();
 	auto* commandList = rs.commandListPool().requestCommandList();
 	auto& swapChain = *service<WindowsService>().mainWindow()->swapChain;

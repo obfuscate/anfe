@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 //-- fmt.
 #include <fmt/core.h>

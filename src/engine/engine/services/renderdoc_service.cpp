@@ -13,7 +13,7 @@ namespace engine::render
 namespace
 {
 
-RTTR_REGISTRATION
+META_REGISTRATION
 {
 	reflection::Service<RenderDocService>("RenderDocService")
 		.cli({"-rdoc"});

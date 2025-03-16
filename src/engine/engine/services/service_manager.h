@@ -3,6 +3,7 @@
 #include <engine/assert.h>
 #include <engine/utils/noncopyable.h>
 #include <engine/utils/family.h>
+#include <engine/utils/hashed_string.h>
 #include <engine/reflection/common.h>
 #include <engine/time.h>
 
@@ -13,6 +14,7 @@ class IService : public utils::NonCopyable
 {
 public:
 	using Type = uint8_t;
+	inline static constexpr auto kMetaCLI = "CLIArgs"_hs;
 
 	IService(Type typeId) : m_typeId(typeId) { }
 	virtual ~IService() = default;
@@ -27,7 +29,6 @@ public:
 private:
 	Type m_typeId = 0;
 
-public:
 	RTTR_ENABLE()
 };
 

@@ -9,7 +9,7 @@ namespace engine
 namespace
 {
 
-RTTR_REGISTRATION
+META_REGISTRATION
 {
 	reflection::Service<CLIService>("CLIService");
 }
@@ -29,7 +29,7 @@ bool CLIService::initialize()
 	auto baseService = rttr::type::get<IService>();
 	for (auto child : baseService.get_derived_classes())
 	{
-		if (auto cliMeta = child.get_metadata(42))
+		if (auto cliMeta = child.get_metadata(IService::kMetaCLI))
 		{
 			const auto& cli = cliMeta.get_value<reflection::BaseService::CLIArgs>();
 			for (auto param : cli)

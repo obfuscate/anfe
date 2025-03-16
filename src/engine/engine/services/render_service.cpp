@@ -11,8 +11,18 @@ namespace engine
 namespace
 {
 
-RTTR_REGISTRATION
+enum class Test0
 {
+	a = 3, b = 5, c = 13, d = 42, e = 155, f = 160
+};
+
+META_REGISTRATION
+{
+	using namespace entt::literals;
+
+	/*reflection::Enum<GraphicsAPI>("GraphicsAPI")
+		.value(GraphicsAPI::DirectX12, "dx12");*/
+
 	rttr::registration::enumeration<GraphicsAPI>("GraphicsAPI")
 	(
 		rttr::value("dx12", GraphicsAPI::DirectX12)
@@ -34,6 +44,7 @@ LLGL::Extent2D scaleResolution(const LLGL::Extent2D& res, float scale)
 		static_cast<std::uint32_t>(hScaled + 0.5f)
 	};
 }
+
 
 LLGL::Extent2D scaleResolutionForDisplay(const LLGL::Extent2D& res, const LLGL::Display* display)
 {

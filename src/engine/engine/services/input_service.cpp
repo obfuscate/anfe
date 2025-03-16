@@ -10,7 +10,7 @@ namespace engine
 namespace
 {
 
-RTTR_REGISTRATION
+META_REGISTRATION
 {
 	reflection::Service<InputService>("InputService");
 }

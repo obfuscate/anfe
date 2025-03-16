@@ -16,7 +16,7 @@ namespace engine
 namespace
 {
 
-RTTR_REGISTRATION
+META_REGISTRATION
 {
 	reflection::Service<ImGUIService>("ImGUIService");
 }
@@ -219,7 +219,7 @@ void ImGUIService::Backend::release()
 }
 
 
-void ImGUIService::Backend::beginFrame(LLGL::CommandBuffer* commandList)
+void ImGUIService::Backend::beginFrame(LLGL::CommandBuffer* /*commandList*/)
 {
 	auto ctx = m_windowContexts.front();
 	//-- ToDo: multi-window.

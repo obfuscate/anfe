@@ -28,7 +28,7 @@ public:
 		void release();
 
 		virtual void beginFrame(LLGL::CommandBuffer* commandList);
-		virtual void endFrame(LLGL::CommandBuffer* commandList) {}
+		virtual void endFrame(LLGL::CommandBuffer* /*commandList*/) {}
 
 	protected:
 		void createResources();

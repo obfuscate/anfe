@@ -13,7 +13,7 @@ using namespace std::string_view_literals;
 
 namespace
 {
-RTTR_REGISTRATION
+META_REGISTRATION
 {
 	reflection::Service<WindowsService>("WindowsService")
 		.cli({ "--wm"sv, "--res"sv})
@@ -28,12 +28,12 @@ public:
 	{
 	}
 
-	void OnResize(LLGL::Window& sender, const LLGL::Extent2D& clientAreaSize) override
+	void OnResize(LLGL::Window& /*sender*/, const LLGL::Extent2D& clientAreaSize) override
 	{
 		m_swapChain->ResizeBuffers(clientAreaSize);
 	}
 
-	void OnUpdate(LLGL::Window& sender) override
+	void OnUpdate(LLGL::Window& /*sender*/) override
 	{
 		__nop();
 		// Re-draw frame

@@ -14,7 +14,7 @@ namespace engine
 namespace
 {
 
-RTTR_REGISTRATION
+META_REGISTRATION
 {
 	reflection::Service<LogService>("LogService")
 		.cli({"--logfile", "-logstd"})

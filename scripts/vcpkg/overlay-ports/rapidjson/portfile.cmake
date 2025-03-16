@@ -1,8 +1,9 @@
 #header-only library
-vcpkg_from_git(
+vcpkg_from_github(
 	OUT_SOURCE_PATH SOURCE_PATH
-	URL https://github.com/Tencent/rapidjson.git
+	REPO Tencent/rapidjson
 	REF 24b5e7a8b27f42fa16b96fc70aade9106cf7102f
+	SHA512 50f8723414a6e63eadd45f97be5c44e9fff2d06216c8cc4df802f5bfc2a9416a039f2c69e9bb1882f7e756cd38a7097eea05cab76c739f45805dc41617140799
 	HEAD_REF master
 )
 

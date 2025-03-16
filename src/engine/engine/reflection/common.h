@@ -2,6 +2,9 @@
 
 #include <rttr/registration>
 #include <fmt/core.h>
+#include <engine/integration/entt/intergration.h> //-- ToDo: Reconsider later.
+
+#define USE_ENTT 0
 
 template <> struct fmt::formatter<rttr::string_view>
 {
