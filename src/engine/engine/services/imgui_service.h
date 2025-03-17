@@ -16,9 +16,9 @@ public:
 	public:
 		struct WindowContext
 		{
-			LLGL::SwapChain* swapChain = nullptr;
+			//LLGL::SwapChain* swapChain = nullptr;
 			ImGuiContext* imGuiContext = nullptr;
-			LLGL::Offset2D mousePosInWindow;
+			//LLGL::Offset2D mousePosInWindow;
 		};
 
 	public:
@@ -27,8 +27,8 @@ public:
 		void initialize();
 		void release();
 
-		virtual void beginFrame(LLGL::CommandBuffer* commandList);
-		virtual void endFrame(LLGL::CommandBuffer* /*commandList*/) {}
+		virtual void beginFrame(/*LLGL::CommandBuffer* commandList*/);
+		virtual void endFrame(/*LLGL::CommandBuffer* commandList*/) {}
 
 	protected:
 		void createResources();
@@ -53,7 +53,7 @@ public:
 
 private:
 	std::unique_ptr<Backend> m_backend;
-	LLGL::CommandBuffer* m_commandList = nullptr;
+	//LLGL::CommandBuffer* m_commandList = nullptr;
 };
 
 } //-- engine.

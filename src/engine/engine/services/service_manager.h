@@ -10,10 +10,23 @@
 namespace engine
 {
 
+namespace details
+{
+
+//-- because concept can't be inside a class...
+template<typename T>
+concept HasCreateCondition = requires
+{
+	{ T::createCondition() } -> std::same_as<bool>;
+};
+
+} //-- service::helpers.
+
 class IService : public utils::NonCopyable
 {
 public:
 	using Type = uint8_t;
+
 	inline static constexpr auto kMetaCLI = "CLIArgs"_hs;
 
 	IService(Type typeId) : m_typeId(typeId) { }
@@ -26,7 +39,7 @@ public:
 
 	Type typeId() const { return m_typeId; }
 
-private:
+protected:
 	Type m_typeId = 0;
 
 	RTTR_ENABLE()
@@ -37,7 +50,7 @@ template<typename T>
 class Service : public IService
 {
 public:
-	Service() : IService(fetchId()) {}
+	Service() : IService(fetchId()) { }
 
 	static Type fetchId()
 	{
@@ -52,17 +65,26 @@ class ServiceManager final
 {
 public:
 
-	template<typename TService, typename... Args>
+	template<typename T, typename... Args>
 	bool add(Args&&... args)
 	{
-		static_assert(std::is_base_of_v<IService, TService>, "Your class has to be inherited from IService!");
-		auto serviceId = TService::fetchId();
+		static_assert(std::is_base_of_v<IService, T>, "Your class has to be inherited from IService!");
+		if constexpr (details::HasCreateCondition<T>)
+		{
+			if (!T::createCondition()) //-- Also we may put in the meta reflection.
+			{
+				//-- Just don't create a service, but mark it as "succesfully" initialized.
+				return true;
+			}
+		}
+
+		auto serviceId = T::fetchId();
 		if (m_services.size() <= serviceId)
 		{
 			m_services.resize(serviceId + 1);
 		}
 
-		m_services[serviceId] = std::make_unique<TService>(std::forward<Args>(args)...);
+		m_services[serviceId] = std::make_unique<T>(std::forward<Args>(args)...);
 		return m_services[serviceId]->initialize();
 	}
 

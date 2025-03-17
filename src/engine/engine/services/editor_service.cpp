@@ -18,7 +18,7 @@ META_REGISTRATION
 
 void EditorService::tick()
 {
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 }
 
 } //-- engine.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <concepts>
 #include <intrin.h>
 #include <filesystem>
 #include <memory>
@@ -13,7 +14,7 @@
 //-- fmt.
 #include <fmt/core.h>
 
-//-- LLGL.
-#include <engine/integration/llgl/integration.h>
+//-- SDL3
+#include <SDL3/SDL.h>
 
 #include <engine/export.h>

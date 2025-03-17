@@ -20,35 +20,53 @@ META_REGISTRATION
 
 bool InputService::initialize()
 {
-	m_input = std::make_unique<LLGL::Input>();
+	//m_input = std::make_unique<LLGL::Input>();
 	return true;
 }
 
 
 void InputService::release()
 {
-	m_input.reset(); //-- Should be released before RenderService.
+	//m_input.reset(); //-- Should be released before RenderService.
 }
 
 
 void InputService::tick()
 {
-	const bool stop = !(LLGL::Surface::ProcessEvents() && !keyDown(LLGL::Key::Escape));
-	if (stop)
+	//-- ToDo: Register callbacks and handle events in specific places.
+	SDL_Event windowEvent;
+	if (SDL_PollEvent(&windowEvent))
 	{
-		engine().stop();
-	}
-
-	if (keyDown(LLGL::Key::F11))
-	{
-		service<render::RenderDocService>().captureFrames("", 1);
+		switch (windowEvent.type)
+		{
+		case SDL_EVENT_QUIT:
+		{
+			engine().stop();
+			break;
+		}
+		case SDL_EVENT_KEY_DOWN:
+		{
+			if (windowEvent.key.key == SDLK_ESCAPE)
+			{
+				engine().stop();
+			}
+			if (windowEvent.key.key == SDLK_F12)
+			{
+				if (auto* rdoc = findService<render::RenderDocService>())
+				{
+					rdoc->captureFrames("", 1);
+				}
+			}
+			break;
+		}
+		}
 	}
 }
 
 
 void InputService::postTick()
 {
-	m_input->Reset();
+	//m_input->Reset();
 }
 
 } //-- engine.

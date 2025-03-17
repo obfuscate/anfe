@@ -12,7 +12,7 @@ include(scripts/cmake/helpers.cmake)
 add_library(GlobalOptions INTERFACE)
 add_library(GlobalOptionsOptimized INTERFACE)
 add_library(GlobalOptionsUnoptimized INTERFACE)
-target_compile_features(GlobalOptions INTERFACE cxx_std_17) # specify the C++ standard
+target_compile_features(GlobalOptions INTERFACE cxx_std_20) # specify the C++ standard
 
 # C++ complie options.
 set(WIN_WARNINGS

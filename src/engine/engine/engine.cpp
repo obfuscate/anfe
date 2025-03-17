@@ -26,14 +26,24 @@ bool Engine::initialize(const int argc, const char* const argv[])
 {
 	//-- ToDo: Think about ordering in plugins.
 	bool initialized = true;
+
+	//-- Some utility stuff.
 	initialized &= m_serviceManager.add<AssertService>();
 	initialized &= m_serviceManager.add<CLIService>(argc, argv);
 	initialized &= m_serviceManager.add<LogService>();
+
+	//-- ECS stuff.
 	initialized &= m_serviceManager.add<WorldService>();
-	initialized &= m_serviceManager.add<render::RenderDocService>(); //-- Should be initialized before any GAPI initialization.
-	initialized &= m_serviceManager.add<RenderService>();
+
+	//-- Windows stuff.
 	initialized &= m_serviceManager.add<InputService>(); //-- Should be before WindowsService, because it registers windows as listeners.
 	initialized &= m_serviceManager.add<WindowsService>();
+
+	//-- Render stuff.
+	initialized &= m_serviceManager.add<render::RenderDocService>(); //-- Should be initialized before any GAPI initialization.
+	initialized &= m_serviceManager.add<RenderService>();
+
+	//-- Other (?) stuff.
 	initialized &= m_serviceManager.add<ImGUIService>(); //-- Should be after RenderService, because it uses RS to retrive some handles. Destroy before RenderService.
 	initialized &= m_serviceManager.add<EditorService>();
 

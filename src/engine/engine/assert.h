@@ -4,7 +4,7 @@
 #if defined(DISABLE_ASSERTS)
 	#define ENGINE_ASSERT(expr, message)
 #else
-	//-- ToDo: Show message in the message box.
+	//-- ToDo: Show a message in the message box.
 	#define ENGINE_ASSERT ASSERT
 #endif
 

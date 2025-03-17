@@ -32,7 +32,7 @@ void WorldService::release()
 
 void WorldService::tick()
 {
-	auto& rs = service<RenderService>();
+	/*auto& rs = service<RenderService>();
 	auto* commandList = rs.commandListPool().requestCommandList();
 	auto& swapChain = *service<WindowsService>().mainWindow()->swapChain;
 	commandList->Begin(); //-- ToDo: move to requestCommandList().
@@ -50,7 +50,7 @@ void WorldService::tick()
 
 		commandList->EndRenderPass();
 	}
-	commandList->End(); //-- ToDo: Move to submitCommandLists();
+	commandList->End(); //-- ToDo: Move to submitCommandLists();*/
 }
 
 } //-- engine.

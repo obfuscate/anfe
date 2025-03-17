@@ -8,8 +8,6 @@
 #include <engine/integration/imgui/imgui_impl_win32.h>
 #include <engine/integration/imgui/imgui_impl_dx12.h>
 
-#include <LLGL/Backend/Direct3D12/NativeHandle.h>
-
 namespace engine
 {
 
@@ -43,7 +41,7 @@ public:
 			d3dSRVDescriptorHeapDesc.NodeMask = 0;
 		}
 		HRESULT result = d3dDevice->CreateDescriptorHeap(&d3dSRVDescriptorHeapDesc, IID_PPV_ARGS(&d3dHeap));
-		LLGL_VERIFY(SUCCEEDED(result));
+		ENGINE_ASSERT(SUCCEEDED(result), "Can't create a descriptor heap");
 
 		d3dCPUHandle = d3dHeap->GetCPUDescriptorHandleForHeapStart();
 		d3dGPUHandle = d3dHeap->GetGPUDescriptorHandleForHeapStart();
@@ -64,7 +62,7 @@ public:
 
 	void Alloc(D3D12_CPU_DESCRIPTOR_HANDLE& outCPUHandle, D3D12_GPU_DESCRIPTOR_HANDLE& outGPUHandle)
 	{
-		LLGL_VERIFY(!freeIndices.empty());
+		ENGINE_ASSERT(!freeIndices.empty(), "Can't allocate a new handle");
 
 		UINT index = freeIndices.back();
 		freeIndices.pop_back();
@@ -77,7 +75,7 @@ public:
 	{
 		const UINT cpuIndex = static_cast<UINT>((inCPUHandle.ptr - d3dCPUHandle.ptr) / d3dHandleSize);
 		const UINT gpuIndex = static_cast<UINT>((inGPUHandle.ptr - d3dGPUHandle.ptr) / d3dHandleSize);
-		LLGL_VERIFY(cpuIndex == gpuIndex);
+		ENGINE_ASSERT(cpuIndex == gpuIndex, "Wrong handles to free");
 		freeIndices.push_back(cpuIndex);
 	}
 
@@ -91,29 +89,29 @@ public:
 class D3D12Backend : public ImGUIService::Backend
 {
 public:
-	D3D12Backend(LLGL::RenderSystem* renderer)
+	D3D12Backend(/*LLGL::RenderSystem* renderer*/)
 	{
 		//-- Create SRV descriptor heap for ImGui's internal resources
-		LLGL::Direct3D12::RenderSystemNativeHandle nativeDeviceHandle;
+		/*LLGL::Direct3D12::RenderSystemNativeHandle nativeDeviceHandle;
 		renderer->GetNativeHandle(&nativeDeviceHandle, sizeof(nativeDeviceHandle));
 		m_device = nativeDeviceHandle.device;
 		m_commandQueue = nativeDeviceHandle.commandQueue;
 
 		m_heapAllocator = DescriptorHeapAllocatorPtr(new D3D12DescriptorHeapAllocator{ m_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 64 });
 
-		createResources();
+		createResources();*/
 	}
 
 	~D3D12Backend()
 	{
-		m_heapAllocator.reset();
+		/*m_heapAllocator.reset();
 		safeRelease(m_commandQueue);
-		safeRelease(m_device);
+		safeRelease(m_device);*/
 	}
 
 	void initializeContext(WindowContext& ctx) override
 	{
-		Backend::initializeContext(ctx);
+		/*Backend::initializeContext(ctx);
 
 		auto& ws = service<WindowsService>();
 		//-- Initialize ImGui D3D12 backend
@@ -136,28 +134,28 @@ public:
 					heapAllocator->Free(inCPUDescHandle, inGPUDescHandle);
 				};
 		}
-		ImGui_ImplDX12_Init(&imGuiInfo);
+		ImGui_ImplDX12_Init(&imGuiInfo);*/
 	}
 
 	void releaseContext(WindowContext& ctx) override
 	{
-		ImGui::SetCurrentContext(ctx.imGuiContext);
+		/*ImGui::SetCurrentContext(ctx.imGuiContext);
 
 		ImGui_ImplDX12_Shutdown();
 
-		Backend::releaseContext(ctx);
+		Backend::releaseContext(ctx);*/
 	}
 
-	void endFrame(LLGL::CommandBuffer* commandList) override
+	void endFrame(/*LLGL::CommandBuffer* commandList*/) override
 	{
-		LLGL::Direct3D12::CommandBufferNativeHandle nativeContextHandle;
+		/*LLGL::Direct3D12::CommandBufferNativeHandle nativeContextHandle;
 		commandList->GetNativeHandle(&nativeContextHandle, sizeof(nativeContextHandle));
 		auto d3dCommandList = nativeContextHandle.commandList;
 
 		ID3D12DescriptorHeap* d3dHeap = m_heapAllocator->GetNative();
 		d3dCommandList->SetDescriptorHeaps(1, &d3dHeap);
 
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), d3dCommandList);
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), d3dCommandList);*/
 	}
 private:
 	using DescriptorHeapAllocatorPtr = std::unique_ptr<D3D12DescriptorHeapAllocator>;
@@ -178,7 +176,7 @@ ImGuiContext* createImGuiContext()
 }
 
 
-void forwardInputToImGui(ImGUIService::Backend::WindowContext& context)
+/*void forwardInputToImGui(ImGUIService::Backend::WindowContext& context)
 {
 	//-- Forward user input to ImGui
 	ImGuiIO& io = ImGui::GetIO();
@@ -196,7 +194,7 @@ void forwardInputToImGui(ImGUIService::Backend::WindowContext& context)
 		io.AddMouseSourceEvent(ImGuiMouseSource_Mouse);
 		io.AddMouseButtonEvent(ImGuiMouseButton_Left, false);
 	}
-}
+}*/
 
 } //-- unnamed.
 
@@ -219,13 +217,13 @@ void ImGUIService::Backend::release()
 }
 
 
-void ImGUIService::Backend::beginFrame(LLGL::CommandBuffer* /*commandList*/)
+void ImGUIService::Backend::beginFrame(/*LLGL::CommandBuffer* commandList*/)
 {
-	auto ctx = m_windowContexts.front();
+	/*auto ctx = m_windowContexts.front();
 	//-- ToDo: multi-window.
 	ImGui::SetCurrentContext(ctx.imGuiContext);
 	
-	forwardInputToImGui(ctx);
+	forwardInputToImGui(ctx);*/
 }
 
 
@@ -234,7 +232,7 @@ void ImGUIService::Backend::createResources()
 	//-- Create new swap-chain/ImGui context connection
 	WindowContext context;
 	{
-		context.swapChain = service<WindowsService>().mainWindow()->swapChain;
+		//context.swapChain = service<WindowsService>().mainWindow()->swapChain;
 		context.imGuiContext = createImGuiContext();
 	}
 	m_windowContexts.push_back(context);
@@ -298,14 +296,14 @@ void ImGUIService::Backend::initializeContext(WindowContext& ctx)
 	//-- Initialize current ImGui context
 	//-- ToDo: Make platform independent.
 	{
-		LLGL::NativeHandle nativeHandle;
-		ctx.swapChain->GetSurface().GetNativeHandle(&nativeHandle, sizeof(nativeHandle));
+		//LLGL::NativeHandle nativeHandle;
+		//ctx.swapChain->GetSurface().GetNativeHandle(&nativeHandle, sizeof(nativeHandle));
 
-		ImGui_ImplWin32_Init(nativeHandle.window);
+		//ImGui_ImplWin32_Init(nativeHandle.window);
 	}
 
 	//-- Connect swap-chain and ImGui context with window
-	LLGL::CastTo<LLGL::Window>(ctx.swapChain->GetSurface()).SetUserData(&ctx);
+	//LLGL::CastTo<LLGL::Window>(ctx.swapChain->GetSurface()).SetUserData(&ctx);
 
 	//lastTick = LLGL::Timer::Tick();
 }
@@ -330,7 +328,7 @@ bool ImGUIService::initialize()
 	{
 	case GraphicsAPI::DirectX12:
 	{
-		m_backend = std::make_unique<D3D12Backend>(rs.renderer());
+		m_backend = std::make_unique<D3D12Backend>();
 		break;
 	}
 	default:
@@ -341,7 +339,7 @@ bool ImGUIService::initialize()
 	}
 
 	m_backend->initialize();
-	m_commandList = rs.commandListPool().imguiCommandList();
+	//m_commandList = rs.commandListPool().imguiCommandList();
 
 	//-- Load Fonts
 	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -371,7 +369,7 @@ void ImGUIService::release()
 
 void ImGUIService::tick()
 {
-	auto& swapChain = *service<WindowsService>().mainWindow()->swapChain;
+	/*auto& swapChain = *service<WindowsService>().mainWindow()->swapChain;
 	m_commandList->Begin();
 	m_commandList->BeginRenderPass(swapChain);
 	m_commandList->SetViewport(swapChain.GetResolution());
@@ -381,18 +379,18 @@ void ImGUIService::tick()
 	//-- ToDO: Reconsider later.
 	ImGui_ImplWin32_NewFrame();
 	ImGui_ImplDX12_NewFrame();
-	ImGui::NewFrame();
+	ImGui::NewFrame();*/
 }
 
 
 void ImGUIService::postTick()
 {
-	ImGui::Render();
+	/*ImGui::Render();
 	m_backend->endFrame(m_commandList);
 
 	m_commandList->PopDebugGroup();
 	m_commandList->EndRenderPass();
-	m_commandList->End();
+	m_commandList->End();*/
 }
 
 } //-- engine.

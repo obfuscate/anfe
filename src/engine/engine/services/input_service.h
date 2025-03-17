@@ -5,6 +5,8 @@
 namespace engine
 {
 
+class WindowWrapper; //-- forward declaration.
+
 class InputService final : public Service<InputService>
 {
 public:
@@ -17,15 +19,14 @@ public:
 	void tick() override;
 	void postTick() override;
 
-	bool keyDown(const LLGL::Key key) const { return m_input->KeyDown(key); }
-	bool keyUp(const LLGL::Key key) const { return m_input->KeyUp(key); }
+	bool keyDown(const SDL_Scancode key) const { return false; /*m_input->KeyDown(key);*/ }
+	bool keyUp(const SDL_Scancode key) const { return false; /* m_input->KeyUp(key);*/ }
 
-	void registerWindow(LLGL::Surface& window) { m_input->Listen(window); }
+	void registerWindow(const WindowWrapper*) { /*m_input->Listen(window);*/ }
 
 private:
 	//-- Because RenderService::release() unload the RenderSystem we have to destroy LLGL::Inputr object before this action.
-	using InputPtr = std::unique_ptr<LLGL::Input>;
-	InputPtr m_input;
+	
 };
 
 } //-- engine.

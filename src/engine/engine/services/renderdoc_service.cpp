@@ -16,7 +16,7 @@ namespace
 META_REGISTRATION
 {
 	reflection::Service<RenderDocService>("RenderDocService")
-		.cli({"-rdoc"});
+		.cli({"-rdoc"}); //-- ToDo: introduce a separated structure CommandLineArgument.
 }
 
 
@@ -123,7 +123,7 @@ bool isRenderDocInstalled()
 } //-- unnamed
 
 
-bool RenderDocService::initialize()
+bool RenderDocService::createCondition()
 {
 	auto& cli = service<CLIService>().parser();
 	if (!cli["-rdoc"])
@@ -136,6 +136,12 @@ bool RenderDocService::initialize()
 		return false;
 	}
 
+	return true;
+}
+
+
+bool RenderDocService::initialize()
+{
 	if (s_apiLibRDoc)
 	{
 		auto* getAPI = (pRENDERDOC_GetAPI)GetProcAddress(s_apiLibRDoc, "RENDERDOC_GetAPI");
