@@ -1,0 +1,16 @@
+{
+	"name": "vfspp",
+	"version-string": "v2.0.0",
+	"description": "vfspp is a C++ Virtual File System header-only library",
+	"homepage": "https://github.com/nextgeniuspro/vfspp",
+	"dependencies": [
+		{
+			"name" : "vcpkg-cmake",
+			"host" : true
+		},
+		{
+			"name" : "vcpkg-cmake-config",
+			"host" : true
+		}
+	]
+}

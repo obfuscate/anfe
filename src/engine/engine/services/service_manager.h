@@ -3,7 +3,7 @@
 #include <engine/assert.h>
 #include <engine/utils/noncopyable.h>
 #include <engine/utils/family.h>
-#include <engine/utils/hashed_string.h>
+#include <engine/utils/string.h>
 #include <engine/reflection/common.h>
 #include <engine/time.h>
 

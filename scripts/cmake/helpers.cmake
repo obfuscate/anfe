@@ -59,3 +59,8 @@ function(load_3rdparty_library target lib_name)
 	find_package(${lib_name} CONFIG REQUIRED)
 	target_link_libraries(${target} PUBLIC ${lib_name}::${lib_name})
 endfunction()
+
+function(add_shader_directories DIRS)
+	list(APPEND SHADER_DIRS ${ARGV})
+	set(SHADER_DIRS "${SHADER_DIRS}" CACHE INTERNAL "")
+endfunction()

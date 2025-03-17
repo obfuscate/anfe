@@ -5,14 +5,20 @@
 namespace engine::reflection
 {
 
+namespace details
+{
+
 class BaseService
 {
 public:
 	using CLIArgs = std::vector<std::string_view>;
 };
 
+} //-- details.
+
+
 template<typename T>
-class Service : public BaseService, public rttr::registration::class_<T>
+class Service : public details::BaseService, public rttr::registration::class_<T>
 {
 public:
 	Service(rttr::string_view name) : BaseService(), rttr::registration::class_<T>(name)

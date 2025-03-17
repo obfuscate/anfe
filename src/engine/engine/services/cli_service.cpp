@@ -31,7 +31,7 @@ bool CLIService::initialize()
 	{
 		if (auto cliMeta = child.get_metadata(IService::kMetaCLI))
 		{
-			const auto& cli = cliMeta.get_value<reflection::BaseService::CLIArgs>();
+			const auto& cli = cliMeta.get_value<reflection::details::BaseService::CLIArgs>();
 			for (auto param : cli)
 			{
 				m_parser.add_param(std::string(param));

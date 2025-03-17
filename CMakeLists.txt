@@ -105,6 +105,15 @@ set_directory_properties(PROPERTIES VS_STARTUP_PROJECT main_launcher)
 # Other libraries.
 link_library(main_launcher engine "src/engine")
 
+# Shaders project.
+add_custom_target(Shaders)
+#set_target_properties(Shaders PROPERTIES FOLDER "Auxiliary")
+foreach(DIR ${SHADER_DIRS})
+	file(GLOB_RECURSE SHADERS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" CONFIGURE_DEPENDS "${DIR}/*.hlsl" "${DIR}/*.hlslh")
+	target_sources(Shaders PRIVATE ${SHADERS})
+	source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${SHADERS})
+endforeach()
+
 # Default CLI.
 set_target_properties(main_launcher PROPERTIES 
-    VS_DEBUGGER_COMMAND_ARGUMENTS "--gapi dx12 -logstd")
+    VS_DEBUGGER_COMMAND_ARGUMENTS "--gapi dx12 -logstd --rootFolder ${CMAKE_SOURCE_DIR}")

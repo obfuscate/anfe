@@ -50,7 +50,7 @@ void InputService::tick()
 			{
 				engine().stop();
 			}
-			if (windowEvent.key.key == SDLK_F12)
+			if (windowEvent.key.key == SDLK_F11)
 			{
 				if (auto* rdoc = findService<render::RenderDocService>())
 				{

@@ -8,6 +8,7 @@
 #include <engine/services/log_service.h>
 #include <engine/services/renderdoc_service.h>
 #include <engine/services/render_service.h>
+#include <engine/services/vfs_service.h>
 #include <engine/services/windows_service.h>
 #include <engine/services/world_service.h>
 
@@ -31,6 +32,7 @@ bool Engine::initialize(const int argc, const char* const argv[])
 	initialized &= m_serviceManager.add<AssertService>();
 	initialized &= m_serviceManager.add<CLIService>(argc, argv);
 	initialized &= m_serviceManager.add<LogService>();
+	initialized &= m_serviceManager.add<VFSService>();
 
 	//-- ECS stuff.
 	initialized &= m_serviceManager.add<WorldService>();
