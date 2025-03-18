@@ -19,7 +19,10 @@ find_package(rttr CONFIG REQUIRED)
 target_link_libraries(engine PUBLIC RTTR::Core)
 
 # DirectX
-target_link_libraries(engine PUBLIC d3d12.lib dxgi.lib d3dcompiler.lib)
+target_link_libraries(engine PUBLIC d3d12.lib dxgi.lib)
+find_package(directx-dxc CONFIG REQUIRED)
+target_link_libraries(engine PUBLIC Microsoft::DirectXShaderCompiler)
 
 # Add shaders.
 add_shader_directories("${CMAKE_SOURCE_DIR}/resources/shaders")
+target_include_directories(engine PUBLIC "${CMAKE_SOURCE_DIR}/resources/shaders")

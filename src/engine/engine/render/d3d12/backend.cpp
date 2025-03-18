@@ -1,7 +1,10 @@
-#include <engine/render/d3d12/d3d12_backend.h>
+#include <engine/render/d3d12/backend.h>
 #include <engine/assert.h>
+#include <engine/helpers.h>
+#include <engine/math.h>
 
 using Microsoft::WRL::ComPtr;
+using namespace std::string_view_literals;
 
 namespace engine::render::d3d12
 {
@@ -80,26 +83,9 @@ D3D_FEATURE_LEVEL getHardwareAdapter(
 	return maxFeatureLevel;
 }
 
-struct Color
-{
-	float r = 0.0f;
-	float g = 0.0f;
-	float b = 0.0f;
-	float a = 0.0f;
-
-	uint32_t toUint() const
-	{
-		return (static_cast<uint32_t>(r * 255.0f) & 0xFF)
-			| (static_cast<uint32_t>(g * 255.0f) & 0xFF) << 8
-			| (static_cast<uint32_t>(b * 255.0f) & 0xFF) << 16
-			| (static_cast<uint32_t>(a * 255.0f) & 0xFF) << 24
-		;
-	}
-};
-
 struct Vertex
 {
-	DirectX::XMFLOAT3 position;
+	engine::math::vec3 position;
 	uint32_t color;
 };
 
@@ -108,6 +94,8 @@ struct Vertex
 
 bool Backend::initialize(const Desc& desc)
 {
+	m_shaderCompiler.initialize();
+
 	uint32_t dxgiFactoryFlags = 0;
 
 	//-- Enable the debug layer (requires the Graphics Tools "optional feature").
@@ -204,6 +192,9 @@ bool Backend::initialize(const Desc& desc)
 	ok = m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator));
 	ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a command allocator.");
 
+	ok = m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_BUNDLE, IID_PPV_ARGS(&m_bundleAllocator));
+	ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a bundle command allocator.");
+
 	//-- Create the command list.
 	ok = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_commandList));
 	ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a command list.");
@@ -230,14 +221,17 @@ bool Backend::initialize(const Desc& desc)
 
 	//-- Create an empty root signature.
 	{
-		CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-		rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
+		rootSignatureDesc.Init_1_0(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
 		ComPtr<ID3DBlob> signature;
 		ComPtr<ID3DBlob> error;
 
 		//-- ToDo: Change the version of the root signature.
-		ok = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
+		//-- The serialized version could be stored in a file on disk for quick loading, eliminating the need to recreate it each time.
+		//-- ToDo: Root signatures can also be defined directly within shader code.
+		//-- In such cases, the shader code and the root signature are compiled together into the same memory blob.
+		ok = D3D12SerializeVersionedRootSignature(&rootSignatureDesc, &signature, &error);
 		ENGINE_ASSERT(SUCCEEDED(ok));
 
 		ok = m_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature));
@@ -246,23 +240,11 @@ bool Backend::initialize(const Desc& desc)
 
 	//-- Create the pipeline state, which includes compiling and loading shaders.
 	{
-		ComPtr<ID3DBlob> vertexShader;
-		ComPtr<ID3DBlob> pixelShader;
-
-#if defined(_DEBUG)
-		//-- Enable better shader debugging with the graphics debugging tools.
-		UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-		UINT compileFlags = 0;
-#endif
-		auto shaderPath = service<VFSService>().absolutePath("/shaders/test_shader.hlsl"sv);
-		auto shaderPathW = utils::convertToWideString(shaderPath);
-
-		ok = D3DCompileFromFile(shaderPathW.c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr);
-		ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a vertex shader.");
-
-		ok = D3DCompileFromFile(shaderPathW.c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr);
-		ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a pixel shader.");
+		auto shader = m_shaderCompiler.compile("/shaders/test_shader.hlsl"sv);
+		if (!shader->ready())
+		{
+			ENGINE_FAIL("Can't load the test shader");
+		}
 
 		//-- Define the vertex input layout.
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
@@ -270,13 +252,15 @@ bool Backend::initialize(const Desc& desc)
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 		};
+		auto vertexShader = shader->shader(resources::ShaderResource::Type::Vertex);
+		auto pixelShader = shader->shader(resources::ShaderResource::Type::Pixel);
 
 		//-- Describe and create the graphics pipeline state object (PSO).
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 		psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
 		psoDesc.pRootSignature = m_rootSignature.Get();
-		psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
-		psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
+		psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.first, vertexShader.second);
+		psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.first, pixelShader.second);
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		psoDesc.DepthStencilState.DepthEnable = FALSE;
@@ -289,6 +273,8 @@ bool Backend::initialize(const Desc& desc)
 
 		ok = m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState));
 		ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a PSO.");
+
+		shader->release(); //-- release IDxcBlob memory. Todo: Reconsider later.
 	}
 
 	//-- Create the vertex buffer.
@@ -297,13 +283,14 @@ bool Backend::initialize(const Desc& desc)
 		//-- Define the geometry for a triangle.
 		Vertex triangleVertices[] =
 		{
-			{ { 0.0f, 0.25f * aspectRatio, 0.0f }, Color(1.0f, 0.0f, 0.0f, 1.0f).toUint() },
-			{ { 0.25f, -0.25f * aspectRatio, 0.0f }, Color(0.0f, 1.0f, 0.0f, 1.0f).toUint() },
-			{ { -0.25f, -0.25f * aspectRatio, 0.0f }, Color(0.0f, 0.0f, 1.0f, 1.0f).toUint() }
+			{ math::vec3(0.0f, 0.25f * aspectRatio, 0.0f), math::color(1.0f, 0.0f, 0.0f, 1.0f).BGRA()},
+			{ math::vec3(0.25f, -0.25f * aspectRatio, 0.0f), math::color(0.0f, 1.0f, 0.0f, 1.0f).BGRA() },
+			{ math::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), math::color(0.0f, 0.0f, 1.0f, 1.0f).BGRA() }
 		};
 
 		const UINT vertexBufferSize = sizeof(triangleVertices);
 
+		//-- ToDo: Reconsider later.
 		//-- Note: using upload heaps to transfer static data like vert buffers is not recommended.
 		//-- Every time the GPU needs it, the upload heap will be marshalled over.
 		//-- Please read up on Default Heap usage. An upload heap is used here for code simplicity
@@ -322,6 +309,8 @@ bool Backend::initialize(const Desc& desc)
 		//-- Copy the triangle data to the vertex buffer.
 		UINT8* pVertexDataBegin;
 		CD3DX12_RANGE readRange(0, 0);        //-- We do not intend to read from this resource on the CPU.
+		//-- ToDo: It returns (as an output parameter) a pointer to the CPU-visible GPU heap memory where the resource is stored
+		//-- (so it only works for resources stored on upload and readback heaps).
 		ok = m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
 		ENGINE_ASSERT(SUCCEEDED(ok), "Can't map a vertex buffer.");
 
@@ -332,6 +321,18 @@ bool Backend::initialize(const Desc& desc)
 		m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
 		m_vertexBufferView.StrideInBytes = sizeof(Vertex);
 		m_vertexBufferView.SizeInBytes = vertexBufferSize;
+	}
+
+	//-- Create and record the bundle.
+	{
+		ok = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, m_bundleAllocator.Get(), m_pipelineState.Get(), IID_PPV_ARGS(&m_bundleCommands));
+		ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a bundle command list");
+
+		m_bundleCommands->SetGraphicsRootSignature(m_rootSignature.Get());
+		m_bundleCommands->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_bundleCommands->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+		m_bundleCommands->DrawInstanced(3, 1, 0, 0);
+		assertIfFailed(m_bundleCommands->Close());
 	}
 
 	return true;
@@ -394,6 +395,7 @@ void Backend::present()
 		//-- that command list can then be reset at any time and must be before re-recording.
 		ok = m_commandList->Reset(m_commandAllocator.Get(), nullptr);
 		ENGINE_ASSERT_DEBUG(SUCCEEDED(ok));
+		m_commandList->SetPipelineState(m_pipelineState.Get()); //-- Or we can reset to this PSO.
 
 		//-- Indicate that the back buffer will be used as a render target.
 		auto beginBarriers = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -401,19 +403,15 @@ void Backend::present()
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
 
+		m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+		m_commandList->RSSetViewports(1, &m_viewport);
+		m_commandList->RSSetScissorRects(1, &m_scissorRect);
+
 		//-- Record commands.
 		const float clearColor[] = { 0.2f, 0.8f, 0.4f, 1.0f };
 		m_commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
 
-		m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
-		m_commandList->SetPipelineState(m_pipelineState.Get()); //-- Or we can reset to this PSO.
-		m_commandList->RSSetViewports(1, &m_viewport);
-		m_commandList->RSSetScissorRects(1, &m_scissorRect);
-		m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-
-		m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-		m_commandList->DrawInstanced(3, 1, 0, 0);
+		m_commandList->ExecuteBundle(m_bundleCommands.Get());
 
 		//-- Indicate that the back buffer will now be used to present.
 		auto endBarriers = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
@@ -433,5 +431,48 @@ void Backend::present()
 
 	waitForPreviousFrame();
 }
+
+//-- Binding slots are not physical blocks of memory or registers that a GPU can access to read descriptors.
+//-- They are simple names (character strings) used to associate descriptors to resource declarations in shader programs
+
+//-- GPUs have access to four types of memory :
+//--
+//-- 1) Dedicated video memory : this is memory reserved\local to the GPU(VRAM).
+//--	It's where we allocate most of the resources accessed by the GPU(through the shader programs).
+//--
+//-- 2) Dedicated system memory : it is a part of the dedicated video memory
+//--	It's allocated at boot time and used by the GPU for internal purposes.
+//--	That is, we can't use it to allocate memory from our application.
+//--
+//-- 3) Shared system memory : this is CPU - visible GPU memory.
+//--	Usually, it is a small part of the GPU local memory(VRAM) accessible by the CPU through the PCI - e bus,
+//--	but the GPU can also use CPU system memory(RAM) as GPU memory if needed.
+//--	Shared system memory is often used as a source in copy operations from shared to dedicated memory
+//--	(that is, from CPU - accessible memory to GPU local memory) to prevent the GPU from accessing resources in memory via the PCI - e bus.
+//--	It's write - combine memory from the CPU point of view, which means that write operations are buffered up and 
+//--	executed in groups when the buffer is full, or when important events occur.This allows to speed up write operations,
+//--	but read ones should be avoided as write - combine memory is uncached.
+//--	This means that if you try to read this memory from your CPU application,
+//--	the buffer that holds the write operations need to be flushed first, which makes reads from write - combine memory slow.
+//--
+//-- 4) CPU system memory : it's system memory(RAM) that, like shared system memory, can be accessed from both CPU and GPU.
+//--	However, CPUs can read from this memory without problems as it is cached.
+//--	On the other hand, GPUs need to access this memory through the PCI - e bus, which can be a bottleneck compared to
+//--	the direct memory access of CPUs through the system memory bus.
+//--
+//-- If you have an integrated graphics card or use a software adapter, there is no distinction between the four memory types mentioned above.
+//-- In that case, both the CPU and GPU will share the only memory type available: system memory (RAM).
+//-- This implies that your GPU may have limited and slower memory access.
+
+//-- When the CreateCommittedResource function is invoked, we need to specify the type of memory where space should be allocated for
+//-- the resource we want to create.You can indicate this information in two ways : abstract and custom.
+//-- In the abstract way, we have three types of memory heaps that allow abstraction from the current hardware.
+//--
+//-- 1) Default heap : memory that resides in dedicated video memory.
+//-- 2) Upload heap : memory that resides in shared video memory.
+//-- 3) Readback heap : memory that resides in CPU system memory.
+//--
+//-- Therefore, using the abstract approach, regardless of whether you have a discrete GPU(that is, a dedicated graphics card) or
+//-- an integrated one, physical memory allocations are hidden from the programmer.
 
 } //-- engine::render::d3d12.

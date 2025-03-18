@@ -46,10 +46,4 @@ void VFSService::release()
 	m_vfs.reset();
 }
 
-
-std::string VFSService::absolutePath(std::string_view relativePath) const
-{
-	return m_vfs->AbsolutePath(relativePath);
-}
-
 } //-- engine.

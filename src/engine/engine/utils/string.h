@@ -11,7 +11,7 @@ inline constexpr std::uint32_t fnv1a_32(const char *s, std::size_t count) {
 	return count ? (fnv1a_32(s, count - 1) ^ s[count - 1]) * 16777619u : 2166136261u;
 }
 
-inline std::wstring convertToWideString(const char* string)
+[[nodiscard]] inline std::wstring convertToWideString(const char* string)
 {
 	std::wstring result;
 
@@ -20,10 +20,13 @@ inline std::wstring convertToWideString(const char* string)
 	result.resize(len);
 	std::mbsrtowcs(result.data(), &string, result.size(), &state);
 
+	auto realSize = result.find_first_of(L'\0');
+	result.resize(realSize);
+
 	return result;
 }
 
-inline std::wstring convertToWideString(const std::string& string)
+[[nodiscard]] inline std::wstring convertToWideString(const std::string& string)
 {
 	return convertToWideString(string.c_str());
 }

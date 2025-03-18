@@ -6,6 +6,7 @@
 
 ## 3rd party libs
 * [argh](https://github.com/skypjack/entt)
+* [dxc] (https://github.com/microsoft/DirectXShaderCompiler)
 * [flecs](https://github.com/SanderMertens/flecs)
 * [fmt](https://github.com/fmtlib/fmt)
 * [imgui](https://github.com/ocornut/imgui)

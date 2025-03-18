@@ -1,10 +1,12 @@
+#include "common.h"
+
 struct PSInput
 {
 	float4 position : SV_POSITION;
 	float4 color : COLOR;
 };
 
-PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
+PSInput vs_main(float4 position : POSITION, float4 color : COLOR)
 {
 	PSInput result;
 
@@ -14,7 +16,7 @@ PSInput VSMain(float4 position : POSITION, float4 color : COLOR)
 	return result;
 }
 
-float4 PSMain(PSInput input) : SV_TARGET0
+float4 ps_main(PSInput input) : SV_TARGET0
 {
 	return input.color;
 }
