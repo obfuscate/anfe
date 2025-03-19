@@ -91,8 +91,8 @@ bool ShaderCompiler::initialize()
 		//m_commonArguments.push_back(L"-remove-unused-globals"); //--  Remove unused static globals and functions. Errors: Unknown argument: '-remove-unused-globals'
 
 		//-- Macroes.
-		//m_arguments.push_back(L"-D");
-		//m_arguments.push_back(L"DEFINE=1");
+		m_commonArguments.push_back(L"-D");
+		m_commonArguments.push_back(L"SHADERS");
 
 		//-- Check disabling optimizations.
 		if (false)
@@ -145,6 +145,7 @@ resources::ShaderResourcePtr ShaderCompiler::compile(std::string_view path)
 				break;
 			}
 
+			//-- ToDo: Reconsider later.
 			if (shader.compare(pos - 2, 2, "vs"))
 			{
 				enabledShaders.set(static_cast<uint8_t>(ShaderType::Vertex), true);
@@ -156,6 +157,10 @@ resources::ShaderResourcePtr ShaderCompiler::compile(std::string_view path)
 			else if (shader.compare(pos - 2, 2, "cs"))
 			{
 				enabledShaders.set(static_cast<uint8_t>(ShaderType::Compute), true);
+			}
+			else if (shader.compare(pos - 2, 2, "as"))
+			{
+				enabledShaders.set(static_cast<uint8_t>(ShaderType::Amplification), true);
 			}
 			else if (shader.compare(pos - 2, 2, "ms"))
 			{
@@ -187,10 +192,10 @@ resources::ShaderResourcePtr ShaderCompiler::compile(std::string_view path)
 
 bool ShaderCompiler::compile(const Blob& blob, const std::string& absolutePath, resources::ShaderResource::Type type, ShaderResource& resource)
 {
-	static constexpr std::array<LPCWSTR, static_cast<uint8_t>(resources::ShaderResource::Type::Count)> kPostfixes = { L".vs", L".ps", L".cs", L".ms" };
-	static constexpr std::array<LPCWSTR, static_cast<uint8_t>(resources::ShaderResource::Type::Count)> kEntryPoints = { L"vs_main", L"ps_main", L"cs_main", L"ms_main" };
+	static constexpr std::array<LPCWSTR, static_cast<uint8_t>(resources::ShaderResource::Type::Count)> kPostfixes = { L".vs", L".ps", L".cs", L".as", L".ms"};
+	static constexpr std::array<LPCWSTR, static_cast<uint8_t>(resources::ShaderResource::Type::Count)> kEntryPoints = { L"vs_main", L"ps_main", L"cs_main", L"as_main", L"ms_main"};
 	//-- ToDo: Reconsider later. version 6.8 is available for dxc, but CreateGraphicsPipelineState fails with it and says that 6.5 is max.
-	static constexpr std::array<LPCWSTR, static_cast<uint8_t>(resources::ShaderResource::Type::Count)> kTargets = { L"vs_6_5", L"ps_6_5", L"cs_6_5", L"ms_6_5" };
+	static constexpr std::array<LPCWSTR, static_cast<uint8_t>(resources::ShaderResource::Type::Count)> kTargets = { L"vs_6_5", L"ps_6_5", L"cs_6_5", L"as_6_5", L"ms_6_5"};
 
 	std::wstring wPath = utils::convertToWideString(absolutePath.data());
 

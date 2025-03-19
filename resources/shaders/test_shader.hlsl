@@ -10,7 +10,7 @@ PSInput vs_main(float4 position : POSITION, float4 color : COLOR)
 {
 	PSInput result;
 
-	result.position = position;
+	result.position = position + g_offset;
 	result.color = color;
 
 	return result;

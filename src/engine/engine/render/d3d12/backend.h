@@ -3,6 +3,7 @@
 #include <engine/render/render_backend.h>
 #include <engine/render/d3d12/shader_compiler.h>
 #include <engine/integration/d3d12/integration.h>
+#include <engine/math.h>
 
 namespace engine::render::d3d12
 {
@@ -21,12 +22,18 @@ private:
 	void waitForPreviousFrame();
 
 private:
+	struct GlobalConstBuffer
+	{
+		math::vec4 offset;
+	};
+
 	using Resources = std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>>;
 
 	Microsoft::WRL::ComPtr<ID3D12Device> m_device;
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> m_swapChain;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_graphicsCommandQueue;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvHeap; //-- ToDo: Write a wrapper for this.
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cbvHeap;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_bundleAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList; //-- ToDo: Move to the pool.
@@ -43,6 +50,10 @@ private:
 	Resources m_renderTargets; //-- ToDo: Make a BackBufferResource.
 
 	UINT m_rtvDescriptorSize = 0;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_constantBuffer;
+	GlobalConstBuffer m_constantBufferData;
+	UINT8* m_pCbvDataBegin = nullptr;
 
 	//-- Synchronization block.
 	Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;

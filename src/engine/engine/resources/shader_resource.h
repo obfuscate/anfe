@@ -17,6 +17,7 @@ public:
 		Vertex,
 		Pixel,
 		Compute,
+		Amplification,
 		Mesh,
 		Count
 	};
