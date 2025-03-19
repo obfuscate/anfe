@@ -94,8 +94,14 @@ public:
 		static_assert(std::is_base_of_v<IService, TService>, "Your class has to be inherited from IService!");
 
 		auto serviceId = TService::fetchId(); //-- It uses mutex inside.
-		ENGINE_ASSERT_DEBUG(serviceId < static_cast<IService::Type>(m_services.size()), "ServiceId is wrong!");
-		return static_cast<TService*>(m_services[serviceId].get());
+		if (serviceId < static_cast<IService::Type>(m_services.size()))
+		{
+			return static_cast<TService*>(m_services[serviceId].get());
+		}
+		else
+		{
+			return nullptr;
+		}
 	}
 
 	template<typename TService>

@@ -23,5 +23,8 @@ using color = engine::integration::math::color;
 
 using quat = engine::integration::math::quat;
 
+constexpr float kPi = DirectX::XM_PI;
+constexpr float k2Pi = DirectX::XM_2PI;
+
 
 } //-- engine::math.

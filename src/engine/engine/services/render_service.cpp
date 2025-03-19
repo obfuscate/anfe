@@ -101,6 +101,11 @@ bool RenderService::initialize()
 	}
 
 	render::IBackend::Desc desc;
+	//-- FrameCount means both the maximum  number of frames that will be queued to the GPU at a time,
+	//-- as well as the number of back buffers in the DXGI swap chain.
+	//-- For the majority of applications, this is convenient and works well.
+	//-- However, there will be certain cases where an application may want to queue up more frames than there are back buffers available.
+	//-- It should be noted that excessive buffering of frames dependent on user input may result in noticeable latency in your app.
 	desc.numBuffers = 2; //-- ToDo: Reconsider later?
 	desc.hwnd = ws.mainWindow()->handle();
 	auto [w, h] = ws.mainWindow()->size();

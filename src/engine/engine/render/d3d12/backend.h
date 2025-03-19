@@ -19,53 +19,85 @@ public:
 	void present() override;
 
 private:
-	void waitForPreviousFrame();
+	//-- Flushes the command queue.
+	void waitForGPU();
+	//-- Only waits until the GPU finishes drawing at least (the oldest) one of the frames queued.
+	//-- In other words, it checks if we can continue creating frames on the CPU timeline.
+	void moveToNextFrame();
 
 private:
-	struct GlobalConstBuffer
+	struct PerCameraCB
 	{
-		math::vec4 offset;
+		math::matrix view;
+		math::matrix proj;
+		math::matrix viewProj;
+	};
+
+	struct PerObjectCB
+	{
+		math::matrix world;
 	};
 
 	using Resources = std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>>;
+	using CommandAllocators = std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>>;
 
 	Microsoft::WRL::ComPtr<ID3D12Device> m_device;
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> m_swapChain;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_graphicsCommandQueue;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvHeap; //-- ToDo: Write a wrapper for this.
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_dsvHeap;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cbvSrvUavHeap;
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator;
+	CommandAllocators m_frameCommandAllocators;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_bundleAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList; //-- ToDo: Move to the pool.
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_bundleCommands;
 
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBuffer;
-	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
 
 	CD3DX12_VIEWPORT m_viewport;
 	CD3DX12_RECT m_scissorRect;
 
 	Resources m_renderTargets; //-- ToDo: Make a BackBufferResource.
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_depthStencil;
 
 	UINT m_rtvDescriptorSize = 0;
 	UINT m_cbvSrvUavDescriptorSize = 0;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_testTexture;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_constantBuffer;
-	GlobalConstBuffer m_constantBufferData;
-	UINT8* m_pCbvDataBegin = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexBuffer;
+	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+	D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
+
+	//-- Should be part of ContanstBufferResource.
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_perCameraConstants;
+	D3D12_GPU_VIRTUAL_ADDRESS m_perCameraConstantsAddress;
+	void* m_perCameraConstantsMapped = nullptr;
+
+	//-- Should be part of ContanstBufferResource.
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_perObjectConstants;
+	D3D12_GPU_VIRTUAL_ADDRESS m_perObjectConstantsAddress;
+	void* m_perObjectConstantsMapped = nullptr;
 
 	//-- Synchronization block.
 	Microsoft::WRL::ComPtr<ID3D12Fence> m_fence;
-	UINT m_frameIndex;
-	HANDLE m_fenceEvent;
-	UINT64 m_fenceValue;
+	UINT m_frameIndex = 0;
+	HANDLE m_fenceEvent = NULL;
+	std::vector<UINT64> m_fenceValues;
 
 	//-- ToDo: Reconsider later. Perhaps it should be part of ShaderResourceManager.
 	ShaderCompiler m_shaderCompiler;
+
+	//-- TODO REMOVE
+	// Scene constants, updated per-frame
+	float m_curRotationAngleRad = 0.0f;
+	// These computed values will be loaded into a ConstantBuffer
+	// during Render
+	math::matrix m_worldMatrix;
+	math::matrix m_viewMatrix;
+	math::matrix m_projectionMatrix;
 };
 
 } //-- engine::render::d3d12.

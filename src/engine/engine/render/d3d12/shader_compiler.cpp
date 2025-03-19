@@ -68,13 +68,11 @@ bool ShaderCompiler::initialize()
 
 	//-- default arguments for compiler.
 	{
-		//--
 		//-- -Fc <file>
 		//-- -Fe <file>              Output warnings and errors to the given file
 		//-- -Fh <file>              Output header file containing object code
 		//-- -Fi <file>              Set preprocess output file name(with / P)
 		//-- -Fsh <file>             Output shader hash to the given file
-		//-- -I <value>              Add directory to include search path
 		//-- -Gfa                    Avoid flow control constructs
 		//-- -Gfp                    Prefer flow control constructs
 		//-- -Odump                  Print the optimizer commands.

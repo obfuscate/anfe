@@ -18,5 +18,17 @@ using float4x4 = engine::math::matrix;
 
 cbuffer Global : register(b0)
 {
-	float4 g_offset;
+
+};
+
+cbuffer PerCamera : register(b1)
+{
+	float4x4 g_view;
+	float4x4 g_proj;
+	float4x4 g_viewProj;
+};
+
+cbuffer PerObject : register(b2)
+{
+	float4x4 g_world;
 };
