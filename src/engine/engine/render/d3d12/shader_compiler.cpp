@@ -367,6 +367,52 @@ bool ShaderCompiler::compile(const Blob& blob, const std::string& absolutePath, 
 		ComPtr<ID3D12ShaderReflection> reflection;
 		ok = m_utils->CreateReflection(&reflectionBuffer, IID_PPV_ARGS(reflection.GetAddressOf()));
 		ENGINE_ASSERT(SUCCEEDED(ok), "[ShaderCompiler]: Can't create reflection for the shader.");
+
+		//-- https://github.com/kymani37299/ForwardPlusRenderer/blob/master/Engine/Render/Shader.cpp
+		//-- https://rtarun9.github.io/blogs/shader_reflection/
+		D3D12_SHADER_DESC desc;
+		reflection->GetDesc(&desc);
+
+		D3D12_SHADER_BUFFER_DESC cbBufferDesc;
+		D3D12_SHADER_VARIABLE_DESC cbVarDesc;
+		D3D12_SHADER_TYPE_DESC cbVarTypeDesc;
+		for (UINT i = 0; i < desc.ConstantBuffers; ++i)
+		{
+			[[maybe_unused]] auto* cbReflected = reflection->GetConstantBufferByIndex(i);
+
+			cbReflected->GetDesc(&cbBufferDesc);
+			for (UINT v = 0; v < cbBufferDesc.Variables; ++v)
+			{
+				auto* varReflected = cbReflected->GetVariableByIndex(v);
+				varReflected->GetDesc(&cbVarDesc);
+
+				auto* varReflectType = varReflected->GetType();
+				varReflectType->GetDesc(&cbVarTypeDesc);
+			}
+			__nop();
+		}
+
+		D3D12_SIGNATURE_PARAMETER_DESC inputSignatureDesc;
+		for (UINT i = 0; i < desc.InputParameters; ++i)
+		{
+			reflection->GetInputParameterDesc(i, &inputSignatureDesc);
+			__nop();
+		}
+
+		D3D12_SIGNATURE_PARAMETER_DESC outputSignatureDesc;
+		for (UINT i = 0; i < desc.OutputParameters; ++i)
+		{
+			reflection->GetOutputParameterDesc(i, &outputSignatureDesc);
+			__nop();
+		}
+
+		D3D12_SHADER_INPUT_BIND_DESC bindDesc;
+		for (UINT i = 0; i < desc.BoundResources; ++i)
+		{
+			reflection->GetResourceBindingDesc(i, &bindDesc);
+		}
+
+		[[maybe_unused]] auto numInterfaceSlots = reflection->GetNumInterfaceSlots(); //-- ToDo: What the hell is it?
 	}
 
 	//-- Hash.
