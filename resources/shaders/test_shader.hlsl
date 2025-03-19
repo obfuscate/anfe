@@ -1,22 +1,31 @@
 #include "common.h"
 
-struct PSInput
+struct VSInput
 {
-	float4 position : SV_POSITION;
-	float4 color : COLOR;
+	float3 pos : POSITION;
+	float2 uv : TEXCOORD0;
 };
 
-PSInput vs_main(float4 position : POSITION, float4 color : COLOR)
+struct PSInput
 {
-	PSInput result;
+	float4 pos : SV_POSITION;
+	float2 uv : TEXCOORD0;
+};
 
-	result.position = position + g_offset;
-	result.color = color;
+Texture2D g_texture : register(t0);
+SamplerState g_sampler : register(s0);
 
-	return result;
+PSInput vs_main(VSInput i)
+{
+	PSInput o;
+
+	o.pos = float4(i.pos, 1.0f) + g_offset;
+	o.uv = i.uv;
+	
+	return o;
 }
 
-float4 ps_main(PSInput input) : SV_TARGET0
+float4 ps_main(PSInput i) : SV_TARGET0
 {
-	return input.color;
+	return g_texture.Sample(g_sampler, i.uv);
 }

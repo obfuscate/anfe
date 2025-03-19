@@ -33,7 +33,7 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> m_swapChain;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_graphicsCommandQueue;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvHeap; //-- ToDo: Write a wrapper for this.
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cbvHeap;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_cbvSrvUavHeap;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_bundleAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_commandList; //-- ToDo: Move to the pool.
@@ -50,6 +50,9 @@ private:
 	Resources m_renderTargets; //-- ToDo: Make a BackBufferResource.
 
 	UINT m_rtvDescriptorSize = 0;
+	UINT m_cbvSrvUavDescriptorSize = 0;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_testTexture;
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_constantBuffer;
 	GlobalConstBuffer m_constantBufferData;

@@ -19,7 +19,8 @@ find_package(rttr CONFIG REQUIRED)
 target_link_libraries(engine PUBLIC RTTR::Core)
 
 # DirectX
-target_link_libraries(engine PUBLIC d3d12.lib dxgi.lib)
+# Alternatively we can #include <initguid.h> before #include <d3d12.h>
+target_link_libraries(engine PUBLIC d3d12.lib dxgi.lib dxguid.lib)
 find_package(directx-dxc CONFIG REQUIRED)
 target_link_libraries(engine PUBLIC Microsoft::DirectXShaderCompiler)
 

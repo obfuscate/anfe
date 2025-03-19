@@ -83,10 +83,53 @@ D3D_FEATURE_LEVEL getHardwareAdapter(
 	return maxFeatureLevel;
 }
 
+constexpr uint32_t kWidth = 256;
+constexpr uint32_t kHeight = 256;
+constexpr uint32_t kPixelSize = 4;
+
+//-- Generate a simple black and white checkerboard texture.
+[[maybe_unused]] std::vector<UINT8> generateTextureData()
+{
+	//-- rowPitch is the byte size of a row in the texture.
+	constexpr UINT rowPitch = kWidth * kPixelSize;
+	constexpr UINT cellPitch = rowPitch >> 3; // The width of a cell in the checkerboard texture.
+	constexpr UINT cellHeight = kWidth >> 3; // The height of a cell in the checkerboard texture.
+	constexpr UINT textureSize = rowPitch * kHeight;
+
+	std::vector<UINT8> data(textureSize);
+	UINT8* pData = &data[0];
+
+	for (UINT n = 0; n < textureSize; n += kPixelSize)
+	{
+		UINT x = n % rowPitch;
+		UINT y = n / rowPitch;
+		UINT i = x / cellPitch;
+		UINT j = y / cellHeight;
+
+		if (i % 2 == j % 2)
+		{
+			pData[n] = 0x00;        // R
+			pData[n + 1] = 0x00;    // G
+			pData[n + 2] = 0x00;    // B
+			pData[n + 3] = 0xff;    // A
+		}
+		else
+		{
+			pData[n] = 0xff;        // R
+			pData[n + 1] = 0xff;    // G
+			pData[n + 2] = 0xff;    // B
+			pData[n + 3] = 0xff;    // A
+		}
+	}
+
+	return data;
+}
+
+
 struct Vertex
 {
-	engine::math::vec3 position;
-	uint32_t color;
+	math::vec3 position;
+	math::vec2 color;
 };
 
 inline UINT calculateConstantBufferByteSize(UINT byteSize)
@@ -179,15 +222,14 @@ bool Backend::initialize(const Desc& desc)
 
 		m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-		//-- Describe and create a constant buffer view (CBV) descriptor heap.
-		//-- Flags indicate that this descriptor heap can be bound to the pipeline 
-		//-- and that descriptors contained in it can be referenced by a root table.
 		D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-		cbvHeapDesc.NumDescriptors = 1;
+		cbvHeapDesc.NumDescriptors = 3; //-- ToDo: Reconsider later.
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		ok = m_device->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&m_cbvHeap));
-		ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a descriptor heap for constant buffers.");
+		ok = m_device->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeap));
+		ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a descriptor heap for CBV, SRV, UAV.");
+
+		m_cbvSrvUavDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 
 	//-- Create frame resources (a RTV for each frame).
@@ -217,8 +259,8 @@ bool Backend::initialize(const Desc& desc)
 
 	//-- Command lists are created in the recording state, but there is nothing to record yet.
 	//-- The main loop expects it to be closed, so close it now.
-	ok = m_commandList->Close();
-	ENGINE_ASSERT(SUCCEEDED(ok), "Can't close a command list.");
+	//ok = m_commandList->Close();
+	//ENGINE_ASSERT(SUCCEEDED(ok), "Can't close a command list.");
 
 	//-- Create synchronization objects.
 	{
@@ -237,22 +279,39 @@ bool Backend::initialize(const Desc& desc)
 
 	//-- Create a root signature.
 	{
-		CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
-		CD3DX12_ROOT_PARAMETER1 rootParameters[1];
+		CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
+		CD3DX12_ROOT_PARAMETER1 rootParameters[2];
 
 		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 		rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_VERTEX);
+		rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+
+		//-- static samplers are part of a root signature, but do not count towards the 64 DWORD limit.
+		D3D12_STATIC_SAMPLER_DESC sampler = {};
+		sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		sampler.MipLODBias = 0;
+		sampler.MaxAnisotropy = 0;
+		sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+		sampler.MinLOD = 0.0f;
+		sampler.MaxLOD = D3D12_FLOAT32_MAX;
+		sampler.ShaderRegister = 0;
+		sampler.RegisterSpace = 0;
+		sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 		//-- Allow input layout and deny uneccessary access to certain pipeline stages.
 		D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-			D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
 		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-		rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr, rootSignatureFlags);
+		rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, rootSignatureFlags);
 
 		ComPtr<ID3DBlob> signature;
 		ComPtr<ID3DBlob> error;
@@ -291,7 +350,7 @@ bool Backend::initialize(const Desc& desc)
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 		{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } //-- ToDo: Use r16g16.
 		};
 		auto vertexShader = shader->shader(resources::ShaderResource::Type::Vertex);
 		auto pixelShader = shader->shader(resources::ShaderResource::Type::Pixel);
@@ -324,9 +383,9 @@ bool Backend::initialize(const Desc& desc)
 		//-- Define the geometry for a triangle.
 		Vertex triangleVertices[] =
 		{
-			{ math::vec3(0.0f, 0.25f * aspectRatio, 0.0f), math::color(1.0f, 0.0f, 0.0f, 1.0f).BGRA()},
-			{ math::vec3(0.25f, -0.25f * aspectRatio, 0.0f), math::color(0.0f, 1.0f, 0.0f, 1.0f).BGRA() },
-			{ math::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), math::color(0.0f, 0.0f, 1.0f, 1.0f).BGRA() }
+			{ math::vec3(0.0f, 0.25f * aspectRatio, 0.0f), math::vec2(0.5f, 0.0f)},
+			{ math::vec3(0.25f, -0.25f * aspectRatio, 0.0f), math::vec2(1.0f, 1.0f) },
+			{ math::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), math::vec2(0.0f, 1.0f) }
 		};
 
 		const UINT vertexBufferSize = sizeof(triangleVertices);
@@ -378,7 +437,9 @@ bool Backend::initialize(const Desc& desc)
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = m_constantBuffer->GetGPUVirtualAddress();
 		cbvDesc.SizeInBytes = constantBufferSize;
-		m_device->CreateConstantBufferView(&cbvDesc, m_cbvHeap->GetCPUDescriptorHandleForHeapStart());
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE cbvHandle(m_cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart());
+		m_device->CreateConstantBufferView(&cbvDesc, cbvHandle);
 
 		//-- Map and initialize the constant buffer. We don't unmap this until the
 		//-- app closes. Keeping things mapped for the lifetime of the resource is okay.
@@ -397,6 +458,83 @@ bool Backend::initialize(const Desc& desc)
 		m_bundleCommands->IASetVertexBuffers(0, 1, &m_vertexBufferView);
 		m_bundleCommands->DrawInstanced(3, 1, 0, 0);
 		assertIfFailed(m_bundleCommands->Close());
+	}
+
+	//-- Note: ComPtr's are CPU objects but this resource needs to stay in scope until
+	//-- the command list that references it has finished executing on the GPU.
+	//-- We will flush the GPU at the end of this method to ensure the resource is not
+	//-- prematurely destroyed.
+	ComPtr<ID3D12Resource> textureUploadHeap;
+
+	//-- Create the texture.
+	{
+		//-- Describe and create a Texture2D.
+		D3D12_RESOURCE_DESC textureDesc = {};
+		textureDesc.MipLevels = 1;
+		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		textureDesc.Width = kWidth;
+		textureDesc.Height = kHeight;
+		textureDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		textureDesc.DepthOrArraySize = 1;
+		textureDesc.SampleDesc.Count = 1;
+		textureDesc.SampleDesc.Quality = 0;
+		textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+		auto defaultHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		assertIfFailed(m_device->CreateCommittedResource(&defaultHeapProps, D3D12_HEAP_FLAG_NONE, &textureDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_testTexture)));
+
+		//-- Well, the intermediate resource on the upload heap is only used to store the texture data.
+		//-- That is, we don't need to create another texture, a buffer is more than enough.
+		//-- And indeed, CD3DX12_RESOURCE_DESC::Buffer is used to create a D3D12_RESOURCE_DESC that describe a buffer.
+		//-- GetRequiredIntermediateSize takes a ID3DResource to compute the amount of memory used by the related resource.
+		//-- That way, we can pass the texture on the default heap to calculate the necessary memory size to allocate on the upload heap.
+		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_testTexture.Get(), 0, 1);
+
+		//-- Create the GPU upload buffer.
+		auto uploadHeapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto uploadBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+		assertIfFailed(m_device->CreateCommittedResource(&uploadHeapProps, D3D12_HEAP_FLAG_NONE, &uploadBufferDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&textureUploadHeap)));
+
+		//-- Copy data to the intermediate upload heap and then schedule a copy  from the upload heap to the Texture2D.
+		std::vector<UINT8> texture = generateTextureData();
+
+		D3D12_SUBRESOURCE_DATA textureData = {};
+		textureData.pData = &texture[0];
+		textureData.RowPitch = kWidth * kPixelSize; //-- RowPitch is the byte size of a row of the subresource.
+		textureData.SlicePitch = textureData.RowPitch * kHeight; //-- SlicePitch is the byte size of the whole subresource (at least for 2D subresources; for 3D subresources is the byte size of the depth)
+
+		UpdateSubresources(m_commandList.Get(), m_testTexture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_testTexture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_commandList->ResourceBarrier(1, &barrier);
+
+		//-- Describe and create a SRV for the texture.
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		//-- Shader4ComponentMapping indicates what values from memory should be returned when the texture is accessed in a shader via this shader resource view (SRV).
+		//-- It allows to select how memory gets routed to the four return components in a shader after a memory fetch.
+		//-- The options for each shader component [0..3] (corresponding to RGBA) are: component [0..3] from the SRV fetch result or force 0 or 1.
+		//-- In other words, you can map a channel value to another channel, or set it to 0 or 1, when you read a texel of the texture by using this view.
+		//-- The default 1:1 mapping can be specified with D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING, indicating you want (Red, Green, Blue, Alpha) as usual;
+		//-- that is, (component 0, component 1, component 2, component 3).
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Format = textureDesc.Format;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+
+		CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart(), 1, m_cbvSrvUavDescriptorSize);
+		m_device->CreateShaderResourceView(m_testTexture.Get(), &srvDesc, srvHandle);
+		//-- ToDo: Make a wrapper for SRV.
+
+		//-- Close the command list and execute it to begin the initial GPU setup.
+		assertIfFailed(m_commandList->Close());
+		ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
+		m_graphicsCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+		//-- Wait for the command list to execute; we are reusing the same command 
+		//-- list in our main loop but for now, we just want to wait for setup to 
+		//-- complete before continuing.
+		waitForPreviousFrame();
 	}
 
 	return true;
@@ -476,15 +614,18 @@ void Backend::present()
 		//-- Root Signature.
 		m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
 
-		ID3D12DescriptorHeap* ppHeaps[] = { m_cbvHeap.Get() };
+		ID3D12DescriptorHeap* ppHeaps[] = { m_cbvSrvUavHeap.Get()};
 		m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-		m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvHeap->GetGPUDescriptorHandleForHeapStart());
+		m_commandList->SetGraphicsRootDescriptorTable(0, m_cbvSrvUavHeap->GetGPUDescriptorHandleForHeapStart());
+
+		CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle(m_cbvSrvUavHeap->GetGPUDescriptorHandleForHeapStart(), 1, m_cbvSrvUavDescriptorSize);
+		m_commandList->SetGraphicsRootDescriptorTable(1, srvHandle);
 
 		//-- Indicate that the back buffer will be used as a render target.
 		auto beginBarriers = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 		m_commandList->ResourceBarrier(1, &beginBarriers);
 
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize); //-- Looks like baked RTV. ToDo: Make a wrapper.
 
 		m_commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 		m_commandList->RSSetViewports(1, &m_viewport);
