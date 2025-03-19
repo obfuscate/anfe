@@ -66,9 +66,12 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_testTexture;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBuffer;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_streamPos;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_streamColor;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_streamUV0;
+	std::vector<D3D12_VERTEX_BUFFER_VIEW> m_streamViews;
+
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexBuffer;
-	D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
 	D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
 
 	//-- Should be part of ContanstBufferResource.

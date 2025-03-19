@@ -126,13 +126,6 @@ constexpr uint32_t kPixelSize = 4;
 }
 
 
-struct Vertex
-{
-	math::vec3 position;
-	uint32_t color;
-	math::vec2 uv;
-};
-
 inline size_t calculateConstantBufferByteSize(size_t byteSize)
 {
 	// Constant buffer size is required to be aligned.
@@ -379,8 +372,8 @@ bool Backend::initialize(const Desc& desc)
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 		{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } //-- ToDo: Use r16g16.
+			{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } //-- ToDo: Use r16g16.
 		};
 		auto vertexShader = shader->shader(resources::ShaderResource::Type::Vertex);
 		auto pixelShader = shader->shader(resources::ShaderResource::Type::Pixel);
@@ -410,19 +403,40 @@ bool Backend::initialize(const Desc& desc)
 	//-- Create the vertex buffer.
 	{
 		//-- Define the geometry for a triangle.
-		Vertex cubeVertices[] =
+		std::vector<math::vec3> positions =
 		{
-			{ math::vec3(-1.0f, 1.0f, -1.0f), math::color(0.0f, 0.0f, 1.0f, 1.0f).BGRA(), math::vec2(1.0f, 0.0f) },
-			{ math::vec3(1.0f, 1.0f, -1.0f), math::color(0.0f, 1.0f, 0.0f, 1.0f).BGRA(), math::vec2(1.0f, 0.0f) },
-			{ math::vec3(1.0f, 1.0f, 1.0f), math::color(0.0f, 1.0f, 1.0f, 1.0f).BGRA(), math::vec2(1.0f, 0.0f) },
-			{ math::vec3(-1.0f, 1.0f, 1.0f), math::color(1.0f, 0.0f, 0.0f, 1.0f).BGRA(), math::vec2(1.0f, 0.0f) },
-			{ math::vec3(-1.0f, -1.0f, -1.0f), math::color(1.0f, 0.0f, 1.0f, 1.0f).BGRA(), math::vec2(1.0f, 0.0f) },
-			{ math::vec3(1.0f, -1.0f, -1.0f), math::color(1.0f, 1.0f, 0.0f, 1.0f).BGRA(), math::vec2(1.0f, 0.0f) },
-			{ math::vec3(1.0f, -1.0f, 1.0f), math::color(1.0f, 1.0f, 1.0f, 1.0f).BGRA(), math::vec2(1.0f, 0.0f) },
-			{ math::vec3(-1.0f, -1.0f, 1.0f), math::color(0.0f, 0.0f, 0.0f, 1.0f).BGRA(), math::vec2(1.0f, 0.0f) },
+			math::vec3(-1.0f, 1.0f, -1.0f),
+			math::vec3(1.0f, 1.0f, -1.0f),
+			math::vec3(1.0f, 1.0f, 1.0f),
+			math::vec3(-1.0f, 1.0f, 1.0f),
+			math::vec3(-1.0f, -1.0f, -1.0f),
+			math::vec3(1.0f, -1.0f, -1.0f),
+			math::vec3(1.0f, -1.0f, 1.0f),
+			math::vec3(-1.0f, -1.0f, 1.0f)
+		};
+		std::vector<uint32_t> colors =
+		{
+			math::color(0.0f, 0.0f, 1.0f, 1.0f).BGRA(),
+			math::color(0.0f, 1.0f, 0.0f, 1.0f).BGRA(),
+			math::color(0.0f, 1.0f, 1.0f, 1.0f).BGRA(),
+			math::color(1.0f, 0.0f, 0.0f, 1.0f).BGRA(),
+			math::color(1.0f, 0.0f, 1.0f, 1.0f).BGRA(),
+			math::color(1.0f, 1.0f, 0.0f, 1.0f).BGRA(),
+			math::color(1.0f, 1.0f, 1.0f, 1.0f).BGRA(),
+			math::color(0.0f, 0.0f, 0.0f, 1.0f).BGRA()
+		};
+		std::vector<math::vec2> uv0s =
+		{
+			math::vec2(1.0f, 0.0f),
+			math::vec2(1.0f, 0.0f),
+			math::vec2(1.0f, 0.0f),
+			math::vec2(1.0f, 0.0f),
+			math::vec2(1.0f, 0.0f),
+			math::vec2(1.0f, 0.0f),
+			math::vec2(1.0f, 0.0f),
+			math::vec2(1.0f, 0.0f)
 		};
 
-		const UINT vertexBufferSize = sizeof(cubeVertices);
 
 		//-- ToDo: Reconsider later.
 		//-- Note: using upload heaps to transfer static data like vert buffers is not recommended.
@@ -430,28 +444,100 @@ bool Backend::initialize(const Desc& desc)
 		//-- Please read up on Default Heap usage. An upload heap is used here for code simplicity
 		//-- and because there are very few verts to actually transfer.
 		auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
-		ok = m_device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_vertexBuffer));
-		ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a vertex buffer.");
 
-		//-- Copy the triangle data to the vertex buffer.
-		UINT8* pVertexDataBegin;
-		CD3DX12_RANGE readRange(0, 0);        //-- We do not intend to read from this resource on the CPU.
-		//-- ToDo: It returns (as an output parameter) a pointer to the CPU-visible GPU heap memory where the resource is stored
-		//-- (so it only works for resources stored on upload and readback heaps).
-		ok = m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
-		ENGINE_ASSERT(SUCCEEDED(ok), "Can't map a vertex buffer.");
+		//-- Positions.
+		UINT bufferSize = static_cast<UINT>(sizeof(math::vec3) * positions.size());
+		auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
+		{
+			ok = m_device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc,
+				D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_streamPos));
+			ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a vertex buffer.");
 
-		memcpy(pVertexDataBegin, cubeVertices, sizeof(cubeVertices));
-		m_vertexBuffer->Unmap(0, nullptr);
+			//-- Copy the triangle data to the vertex buffer.
+			UINT8* pVertexDataBegin;
+			CD3DX12_RANGE readRange(0, 0);        //-- We do not intend to read from this resource on the CPU.
+			//-- ToDo: It returns (as an output parameter) a pointer to the CPU-visible GPU heap memory where the resource is stored
+			//-- (so it only works for resources stored on upload and readback heaps).
+			ok = m_streamPos->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
+			ENGINE_ASSERT(SUCCEEDED(ok), "Can't map a vertex buffer.");
 
-		// Initialize the vertex buffer view.
-		m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-		m_vertexBufferView.StrideInBytes = sizeof(Vertex);
-		m_vertexBufferView.SizeInBytes = vertexBufferSize;
+			memcpy(pVertexDataBegin, positions.data(), bufferSize);
+			m_streamPos->Unmap(0, nullptr);
+
+			// Initialize the vertex buffer view.
+			D3D12_VERTEX_BUFFER_VIEW streamView = {
+				.BufferLocation = m_streamPos->GetGPUVirtualAddress(),
+				.SizeInBytes = bufferSize,
+				.StrideInBytes = sizeof(math::vec3)
+			};
+			m_streamViews.push_back(streamView);
+		}
+
+		//-- Colors.
+		bufferSize = static_cast<UINT>(sizeof(uint32_t) * colors.size());
+		bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
+		{
+			ok = m_device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc,
+				D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_streamColor));
+			ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a vertex buffer.");
+
+			//-- Copy the triangle data to the vertex buffer.
+			UINT8* pVertexDataBegin;
+			CD3DX12_RANGE readRange(0, 0);        //-- We do not intend to read from this resource on the CPU.
+			//-- ToDo: It returns (as an output parameter) a pointer to the CPU-visible GPU heap memory where the resource is stored
+			//-- (so it only works for resources stored on upload and readback heaps).
+			ok = m_streamColor->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
+			ENGINE_ASSERT(SUCCEEDED(ok), "Can't map a vertex buffer.");
+
+			memcpy(pVertexDataBegin, colors.data(), bufferSize);
+			m_streamColor->Unmap(0, nullptr);
+
+			// Initialize the vertex buffer view.
+			D3D12_VERTEX_BUFFER_VIEW streamView = {
+				.BufferLocation = m_streamColor->GetGPUVirtualAddress(),
+				.SizeInBytes = bufferSize,
+				.StrideInBytes = sizeof(uint32_t)
+			};
+			m_streamViews.push_back(streamView);
+		}
+
+		//-- UV0s.
+		bufferSize = static_cast<UINT>(sizeof(math::vec2) * uv0s.size());
+		bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
+		{
+			ok = m_device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc,
+				D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_streamUV0));
+			ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a vertex buffer.");
+
+			//-- Copy the triangle data to the vertex buffer.
+			UINT8* pVertexDataBegin;
+			CD3DX12_RANGE readRange(0, 0);        //-- We do not intend to read from this resource on the CPU.
+			//-- ToDo: It returns (as an output parameter) a pointer to the CPU-visible GPU heap memory where the resource is stored
+			//-- (so it only works for resources stored on upload and readback heaps).
+			ok = m_streamUV0->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
+			ENGINE_ASSERT(SUCCEEDED(ok), "Can't map a vertex buffer.");
+
+			memcpy(pVertexDataBegin, uv0s.data(), bufferSize);
+			m_streamUV0->Unmap(0, nullptr);
+
+			// Initialize the vertex buffer view.
+			D3D12_VERTEX_BUFFER_VIEW streamView = {
+				.BufferLocation = m_streamUV0->GetGPUVirtualAddress(),
+				.SizeInBytes = bufferSize,
+				.StrideInBytes = sizeof(math::vec2)
+			};
+			m_streamViews.push_back(streamView);
+		}
 	}
 
+	//    3________ 2
+	//    /|      /|
+	//   /_|_____/ |
+	//  0|7|_ _ 1|_|6
+	//   | /     | /
+	//   |/______|/
+	//  4       5
+	//
 	//-- Create index buffer
 	{
 		uint16_t indices[] =
@@ -810,7 +896,7 @@ void Backend::present()
 
 		//m_commandList->ExecuteBundle(m_bundleCommands.Get());
 		m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+		m_commandList->IASetVertexBuffers(0, static_cast<UINT>(m_streamViews.size()), m_streamViews.data());
 		m_commandList->IASetIndexBuffer(&m_indexBufferView);
 		m_commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
 		{
