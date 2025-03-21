@@ -45,6 +45,9 @@ public:
 
 	GraphicsAPI gapi() const { return m_gapi; }
 
+	//-- ToDo: Remove and add create section.
+	render::IBackend* backend() { return m_backend.get(); }
+
 private:
 	using BackendPtr = std::unique_ptr<render::IBackend>;
 	//using SwapChains = std::vector<LLGL::SwapChain*>;

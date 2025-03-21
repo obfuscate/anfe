@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <assert.h>
 #include <concepts>
 #include <intrin.h>

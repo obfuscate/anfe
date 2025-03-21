@@ -5,26 +5,29 @@
 namespace engine::math
 {
 
-using vec2 = engine::integration::math::vec2;
-using vec3 = engine::integration::math::vec3;
-using vec4 = engine::integration::math::vec4;
+using vec2 = integration::math::vec2;
+using vec3 = integration::math::vec3;
+using vec4 = integration::math::vec4;
 
-using ivec2 = engine::integration::math::ivec2;
-using ivec3 = engine::integration::math::ivec3;
-using ivec4 = engine::integration::math::ivec4;
+using ivec2 = integration::math::ivec2;
+using ivec3 = integration::math::ivec3;
+using ivec4 = integration::math::ivec4;
 
-using uvec2 = engine::integration::math::uvec2;
-using uvec3 = engine::integration::math::uvec3;
-using uvec4 = engine::integration::math::uvec4;
+using uvec2 = integration::math::uvec2;
+using uvec3 = integration::math::uvec3;
+using uvec4 = integration::math::uvec4;
 
-using matrix = engine::integration::math::matrix;
+using matrix = integration::math::matrix;
 
-using color = engine::integration::math::color;
+using color = integration::math::color;
 
-using quat = engine::integration::math::quat;
+using quat = integration::math::quat;
 
 constexpr float kPi = DirectX::XM_PI;
 constexpr float k2Pi = DirectX::XM_2PI;
+
+FORCE_INLINE math::vec3 min(const vec3& lhs, const vec3& rhs) { return integration::math::min(lhs, rhs); }
+FORCE_INLINE math::vec3 max(const vec3& lhs, const vec3& rhs) { return integration::math::max(lhs, rhs); }
 
 
 } //-- engine::math.

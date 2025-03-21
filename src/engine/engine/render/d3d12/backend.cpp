@@ -369,11 +369,16 @@ bool Backend::initialize(const Desc& desc)
 		}
 
 		//-- Define the vertex input layout.
+		//-- ToDo: Use reflection.
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 		{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 } //-- ToDo: Use r16g16.
+			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, //-- ToDo: pack TBN.
+			{ "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 4, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, //-- ToDo: Use r16g16.
+			{ "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 5, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, //-- ToDo: Use r16g16.
+			{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 6, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 		};
 		auto vertexShader = shader->shader(resources::ShaderResource::Type::Vertex);
 		auto pixelShader = shader->shader(resources::ShaderResource::Type::Pixel);
@@ -398,194 +403,6 @@ bool Backend::initialize(const Desc& desc)
 		ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a PSO.");
 
 		shader->release(); //-- release IDxcBlob memory. Todo: Reconsider later.
-	}
-
-	//-- Create the vertex buffer.
-	{
-		//-- Define the geometry for a triangle.
-		std::vector<math::vec3> positions =
-		{
-			math::vec3(-1.0f, 1.0f, -1.0f),
-			math::vec3(1.0f, 1.0f, -1.0f),
-			math::vec3(1.0f, 1.0f, 1.0f),
-			math::vec3(-1.0f, 1.0f, 1.0f),
-			math::vec3(-1.0f, -1.0f, -1.0f),
-			math::vec3(1.0f, -1.0f, -1.0f),
-			math::vec3(1.0f, -1.0f, 1.0f),
-			math::vec3(-1.0f, -1.0f, 1.0f)
-		};
-		std::vector<uint32_t> colors =
-		{
-			math::color(0.0f, 0.0f, 1.0f, 1.0f).BGRA(),
-			math::color(0.0f, 1.0f, 0.0f, 1.0f).BGRA(),
-			math::color(0.0f, 1.0f, 1.0f, 1.0f).BGRA(),
-			math::color(1.0f, 0.0f, 0.0f, 1.0f).BGRA(),
-			math::color(1.0f, 0.0f, 1.0f, 1.0f).BGRA(),
-			math::color(1.0f, 1.0f, 0.0f, 1.0f).BGRA(),
-			math::color(1.0f, 1.0f, 1.0f, 1.0f).BGRA(),
-			math::color(0.0f, 0.0f, 0.0f, 1.0f).BGRA()
-		};
-		std::vector<math::vec2> uv0s =
-		{
-			math::vec2(1.0f, 0.0f),
-			math::vec2(1.0f, 0.0f),
-			math::vec2(1.0f, 0.0f),
-			math::vec2(1.0f, 0.0f),
-			math::vec2(1.0f, 0.0f),
-			math::vec2(1.0f, 0.0f),
-			math::vec2(1.0f, 0.0f),
-			math::vec2(1.0f, 0.0f)
-		};
-
-
-		//-- ToDo: Reconsider later.
-		//-- Note: using upload heaps to transfer static data like vert buffers is not recommended.
-		//-- Every time the GPU needs it, the upload heap will be marshalled over.
-		//-- Please read up on Default Heap usage. An upload heap is used here for code simplicity
-		//-- and because there are very few verts to actually transfer.
-		auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-
-		//-- Positions.
-		UINT bufferSize = static_cast<UINT>(sizeof(math::vec3) * positions.size());
-		auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
-		{
-			ok = m_device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc,
-				D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_streamPos));
-			ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a vertex buffer.");
-
-			//-- Copy the triangle data to the vertex buffer.
-			UINT8* pVertexDataBegin;
-			CD3DX12_RANGE readRange(0, 0);        //-- We do not intend to read from this resource on the CPU.
-			//-- ToDo: It returns (as an output parameter) a pointer to the CPU-visible GPU heap memory where the resource is stored
-			//-- (so it only works for resources stored on upload and readback heaps).
-			ok = m_streamPos->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
-			ENGINE_ASSERT(SUCCEEDED(ok), "Can't map a vertex buffer.");
-
-			memcpy(pVertexDataBegin, positions.data(), bufferSize);
-			m_streamPos->Unmap(0, nullptr);
-
-			// Initialize the vertex buffer view.
-			D3D12_VERTEX_BUFFER_VIEW streamView = {
-				.BufferLocation = m_streamPos->GetGPUVirtualAddress(),
-				.SizeInBytes = bufferSize,
-				.StrideInBytes = sizeof(math::vec3)
-			};
-			m_streamViews.push_back(streamView);
-		}
-
-		//-- Colors.
-		bufferSize = static_cast<UINT>(sizeof(uint32_t) * colors.size());
-		bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
-		{
-			ok = m_device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc,
-				D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_streamColor));
-			ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a vertex buffer.");
-
-			//-- Copy the triangle data to the vertex buffer.
-			UINT8* pVertexDataBegin;
-			CD3DX12_RANGE readRange(0, 0);        //-- We do not intend to read from this resource on the CPU.
-			//-- ToDo: It returns (as an output parameter) a pointer to the CPU-visible GPU heap memory where the resource is stored
-			//-- (so it only works for resources stored on upload and readback heaps).
-			ok = m_streamColor->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
-			ENGINE_ASSERT(SUCCEEDED(ok), "Can't map a vertex buffer.");
-
-			memcpy(pVertexDataBegin, colors.data(), bufferSize);
-			m_streamColor->Unmap(0, nullptr);
-
-			// Initialize the vertex buffer view.
-			D3D12_VERTEX_BUFFER_VIEW streamView = {
-				.BufferLocation = m_streamColor->GetGPUVirtualAddress(),
-				.SizeInBytes = bufferSize,
-				.StrideInBytes = sizeof(uint32_t)
-			};
-			m_streamViews.push_back(streamView);
-		}
-
-		//-- UV0s.
-		bufferSize = static_cast<UINT>(sizeof(math::vec2) * uv0s.size());
-		bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
-		{
-			ok = m_device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &bufferDesc,
-				D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_streamUV0));
-			ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a vertex buffer.");
-
-			//-- Copy the triangle data to the vertex buffer.
-			UINT8* pVertexDataBegin;
-			CD3DX12_RANGE readRange(0, 0);        //-- We do not intend to read from this resource on the CPU.
-			//-- ToDo: It returns (as an output parameter) a pointer to the CPU-visible GPU heap memory where the resource is stored
-			//-- (so it only works for resources stored on upload and readback heaps).
-			ok = m_streamUV0->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
-			ENGINE_ASSERT(SUCCEEDED(ok), "Can't map a vertex buffer.");
-
-			memcpy(pVertexDataBegin, uv0s.data(), bufferSize);
-			m_streamUV0->Unmap(0, nullptr);
-
-			// Initialize the vertex buffer view.
-			D3D12_VERTEX_BUFFER_VIEW streamView = {
-				.BufferLocation = m_streamUV0->GetGPUVirtualAddress(),
-				.SizeInBytes = bufferSize,
-				.StrideInBytes = sizeof(math::vec2)
-			};
-			m_streamViews.push_back(streamView);
-		}
-	}
-
-	//    3________ 2
-	//    /|      /|
-	//   /_|_____/ |
-	//  0|7|_ _ 1|_|6
-	//   | /     | /
-	//   |/______|/
-	//  4       5
-	//
-	//-- Create index buffer
-	{
-		uint16_t indices[] =
-		{
-			// TOP
-			3, 1, 0,
-			2, 1, 3,
-
-			// FRONT
-			0, 5, 4,
-			1, 5, 0,
-
-			// RIGHT
-			3, 4, 7,
-			0, 4, 3,
-
-			// LEFT
-			1, 6, 5,
-			2, 6, 1,
-
-			// BACK
-			2, 7, 6,
-			3, 7, 2,
-
-			// BOTTOM
-			6, 4, 5,
-			7, 4, 6,
-		};
-
-		const UINT indexBufferSize = sizeof(indices);
-
-		auto heapProps = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		auto resDesc = CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize);
-		ok = m_device->CreateCommittedResource(&heapProps, D3D12_HEAP_FLAG_NONE, &resDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_indexBuffer));
-		ENGINE_ASSERT(SUCCEEDED(ok), "Can't create index buffer.");
-
-		// Copy the cube data to the vertex buffer.
-		UINT8* pIndexDataBegin;
-		CD3DX12_RANGE readRange(0, 0);
-		m_indexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pIndexDataBegin));
-		memcpy(pIndexDataBegin, indices, sizeof(indices));
-		m_indexBuffer->Unmap(0, nullptr);
-
-		// Initialize the vertex buffer view.
-		m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
-		m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-		m_indexBufferView.SizeInBytes = indexBufferSize;
 	}
 
 	//-- Create the constant buffers.
@@ -694,12 +511,54 @@ bool Backend::initialize(const Desc& desc)
 		CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(m_cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart(), 1, m_cbvSrvUavDescriptorSize);
 		m_device->CreateShaderResourceView(m_testTexture.Get(), &srvDesc, srvHandle);
 		//-- ToDo: Make a wrapper for SRV.
-
-		//-- Close the command list and execute it to begin the initial GPU setup.
-		assertIfFailed(m_commandList->Close());
-		ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
-		m_graphicsCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
+
+	//-- TODO REMOVE
+	{
+		//-- Initialize the world matrix
+		m_worldMatrix = math::matrix::Identity;
+
+		//-- Initialize the view matrix
+		const math::vec3 eye = { 0.0f, 3.0f, -10.0f };
+		const math::vec3 at = { 0.0f, 1.0f, 0.0f };
+		const math::vec3 up = { 0.0f, 1.0f, 0.0f };
+		m_viewMatrix = math::matrix::CreateLookAt(eye, at, up); //-- LH?
+
+		//-- Initialize the projection matrix
+		m_projectionMatrix = math::matrix::CreatePerspectiveFieldOfView(DirectX::XM_PIDIV4, desc.width / static_cast<float>(desc.height), 0.01f, 100.0f); //-- LH?
+	}
+
+	m_meshResource = std::make_shared<resources::MeshResource>();
+	m_meshResource->load("/meshes/max7_blend_cube_24.obj");
+	{
+		std::array<D3D12_RESOURCE_BARRIER, static_cast<size_t>(resources::MeshResource::Stream::Count) + 1> barriers;
+		//-- Prepare buffers for copying.
+		for (size_t i = 0; i < barriers.size() - 1; ++i)
+		{
+			barriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(m_meshResource->m_streams[i].Get(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST);
+		}
+		barriers[7] = CD3DX12_RESOURCE_BARRIER::Transition(m_meshResource->m_indexBuffer.Get(), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST);
+		m_commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+
+		for (size_t i = 0; i < barriers.size() - 1; ++i)
+		{
+			m_commandList->CopyBufferRegion(m_meshResource->m_streams[i].Get(), 0, m_meshResource->m_uploadBuffers[i].Get(), 0, m_meshResource->m_streamsSize[i]);
+		}
+		m_commandList->CopyBufferRegion(m_meshResource->m_indexBuffer.Get(), 0, m_meshResource->m_uploadIndexBuffer.Get(), 0, m_meshResource->m_indexBufferSize);
+
+		//-- Set buffers to the right state.
+		for (size_t i = 0; i < barriers.size() - 1; ++i)
+		{
+			barriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(m_meshResource->m_streams[i].Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+		}
+		barriers[7] = CD3DX12_RESOURCE_BARRIER::Transition(m_meshResource->m_indexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER);
+		m_commandList->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+	}
+
+	//-- Close the command list and execute it to begin the initial GPU setup.
+	assertIfFailed(m_commandList->Close());
+	ID3D12CommandList* ppCommandLists[] = { m_commandList.Get() };
+	m_graphicsCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
 	//-- Create synchronization objects.
 	{
@@ -719,21 +578,6 @@ bool Backend::initialize(const Desc& desc)
 		//-- list in our main loop but for now, we just want to wait for setup to 
 		//-- complete before continuing.
 		waitForGPU();
-	}
-
-	//-- TODO REMOVE
-	{
-		//-- Initialize the world matrix
-		m_worldMatrix = math::matrix::Identity;
-
-		//-- Initialize the view matrix
-		const math::vec3 eye = { 0.0f, 3.0f, -10.0f };
-		const math::vec3 at = { 0.0f, 1.0f, 0.0f };
-		const math::vec3 up = { 0.0f, 1.0f, 0.0f };
-		m_viewMatrix = math::matrix::CreateLookAt(eye, at, up); //-- LH?
-
-		//-- Initialize the projection matrix
-		m_projectionMatrix = math::matrix::CreatePerspectiveFieldOfView(DirectX::XM_PIDIV4, desc.width / static_cast<float>(desc.height), 0.01f, 100.0f); //-- LH?
 	}
 
 	return true;
@@ -799,7 +643,10 @@ void Backend::present()
 		}
 
 		// Rotate the cube around the Y-axis
-		m_worldMatrix = math::matrix::CreateRotationY(m_curRotationAngleRad);
+		auto rot = math::matrix::CreateRotationY(m_curRotationAngleRad);
+		auto scale = math::matrix::CreateScale(0.05f);
+		m_worldMatrix = scale * rot; //-- ToDo: Just create a ctor.
+		//math::matrix::Create
 	}
 
 	//-- RENDER PART. TODO: MOVE OUT TO THE SYSTEMS.
@@ -895,11 +742,19 @@ void Backend::present()
 		m_commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
 		//m_commandList->ExecuteBundle(m_bundleCommands.Get());
-		m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_commandList->IASetVertexBuffers(0, static_cast<UINT>(m_streamViews.size()), m_streamViews.data());
-		m_commandList->IASetIndexBuffer(&m_indexBufferView);
-		m_commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+		if (m_meshResource->ready())
 		{
+			m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			for (auto& submesh : m_meshResource->m_subMeshes)
+			{
+				//-- ToDo: We may store streamviews and indexbuffer outside of submesh and setup it once, instead of per submesh.
+				m_commandList->IASetVertexBuffers(0, static_cast<UINT>(submesh.renderPart.streamViews.size()), submesh.renderPart.streamViews.data());
+				m_commandList->IASetIndexBuffer(&submesh.renderPart.indexBufferView);
+				m_commandList->DrawIndexedInstanced(submesh.renderPart.numIndices, 1, submesh.renderPart.startIndex, submesh.renderPart.baseVertex, 0);
+			}
+		}
+
+		/*{
 			PerObjectCB cbParameters;
 
 			basePerObjectCBAddress += calculateConstantBufferByteSize(sizeof(PerObjectCB));
@@ -922,8 +777,12 @@ void Backend::present()
 
 			// Draw the second cube
 			//m_commandList->ExecuteBundle(m_bundleCommands.Get()); //-- Or just Draw(...).
-			m_commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
-		}
+			if (m_meshResource->ready())
+			{
+				auto& renderPart = m_meshResource->renderRepresentation();
+				m_commandList->DrawIndexedInstanced(renderPart.numIndices, 1, renderPart.startIndex, renderPart.baseVertex, 0);
+			}
+		}*/
 
 		//-- Indicate that the back buffer will now be used to present.
 		auto endBarriers = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);

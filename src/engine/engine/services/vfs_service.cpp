@@ -34,6 +34,7 @@ bool VFSService::initialize()
 
 	rootFS->Initialize();
 
+	//-- Todo: path via config/cli/api.
 	m_vfs = std::make_shared<vfspp::VirtualFileSystem>();
 	m_vfs->AddFileSystem("/", std::move(rootFS));
 

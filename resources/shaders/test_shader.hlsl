@@ -3,8 +3,12 @@
 struct VSInput
 {
 	float3 pos : POSITION;
-	float4 color : COLOR0;
-	float2 uv : TEXCOORD0;
+	float3 tangent : TANGENT;
+	float3 bitangent : BITANGENT;
+	float3 normal : NORMAL;
+	float2 uv0 : TEXCOORD0;
+	float2 uv1 : TEXCOORD1;
+	float4 color : COLOR;
 };
 
 struct PSInput
@@ -25,7 +29,7 @@ PSInput vs_main(VSInput i)
 	o.pos = mul(o.pos, g_view);
 	o.pos = mul(o.pos, g_proj);
 	o.color = i.color;
-	o.uv = i.uv;
+	o.uv = i.uv0;
 
 	return o;
 }

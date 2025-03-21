@@ -58,18 +58,6 @@ void Engine::run()
 	m_run = true;
 	while (m_run)
 	{
-		//-- On mobile platforms, if app has paused, the swap-chain might not be presentable until the app is resumed again
-		/*if (!swapChain->IsPresentable())
-		{
-			std::this_thread::yield();
-			continue;
-		}*/
-
-	/*#ifdef LLGL_OS_ANDROID
-		if (input.KeyDown(LLGL::Key::BrowserBack))
-			ANativeActivity_finish(ExampleBase::androidApp_->activity);
-	#endif*/
-
 		//m_serviceManager.tick();
 
 		auto& sm = m_serviceManager;

@@ -4,6 +4,7 @@
 #include <engine/render/d3d12/shader_compiler.h>
 #include <engine/integration/d3d12/integration.h>
 #include <engine/math.h>
+#include <engine/resources/mesh_resource.h>
 
 namespace engine::render::d3d12
 {
@@ -17,6 +18,8 @@ public:
 	void release() override;
 
 	void present() override;
+
+	ID3D12Device* device() { return m_device.Get(); }
 
 private:
 	//-- Flushes the command queue.
@@ -66,13 +69,7 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_testTexture;
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_streamPos;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_streamColor;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_streamUV0;
-	std::vector<D3D12_VERTEX_BUFFER_VIEW> m_streamViews;
-
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_indexBuffer;
-	D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
+	resources::MeshResourcePtr m_meshResource;
 
 	//-- Should be part of ContanstBufferResource.
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_perCameraConstants;

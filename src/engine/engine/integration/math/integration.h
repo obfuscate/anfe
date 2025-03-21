@@ -24,6 +24,7 @@ namespace SimpleMath
 //-- But I'm too lazy right now to do it.
 namespace engine::integration::math
 {
+
 using vec2 = DirectX::SimpleMath::Vector2;
 using vec3 = DirectX::SimpleMath::Vector3;
 using vec4 = DirectX::SimpleMath::Vector4;
@@ -41,4 +42,10 @@ using matrix = DirectX::SimpleMath::Matrix;
 using color = DirectX::SimpleMath::Color;
 
 using quat = DirectX::SimpleMath::Quaternion;
-}
+
+
+FORCE_INLINE math::vec3 min(const math::vec3& lhs, const math::vec3& rhs) { return vec3::Min(lhs, rhs); }
+FORCE_INLINE math::vec3 max(const math::vec3& lhs, const math::vec3& rhs) { return vec3::Max(lhs, rhs); }
+
+} //-- engine::integration::math.
+
