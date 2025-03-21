@@ -20,7 +20,6 @@ public:
 
 	void extend(const AABB& aabb)
 	{
-		//-- ToDo: Reconsider later?
 		extend(aabb.m_min);
 		extend(aabb.m_max);
 	}

@@ -5,7 +5,7 @@
 
 #include <dxgi1_6.h>
 #include <d3d12sdklayers.h>
-#include <DirectXMath.h> //-- ToDo: Replace by some 3rd party?
+#include <DirectXMath.h>
 #include <wrl.h>
 
 #include <engine/integration/d3d12/d3dx12.h>

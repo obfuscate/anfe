@@ -9,14 +9,13 @@ namespace engine
 enum class GraphicsAPI : uint8_t
 {
 	DirectX12 = 0,
-	//-- ToDo: Add Vulkan later.
 	Unknown
 };
 
 class RenderService final : public Service<RenderService>
 {
 public:
-	using CommandList = void;// LLGL::CommandBuffer;
+	using CommandList = void;
 
 	class CommandListPool
 	{

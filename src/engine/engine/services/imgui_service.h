@@ -2,7 +2,7 @@
 
 #include <engine/services/service_manager.h>
 
-#include <imgui.h> //-- ToDo: Fix the installing imgui.
+#include <imgui.h>
 
 namespace engine
 {

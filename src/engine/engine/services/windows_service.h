@@ -19,7 +19,7 @@ public:
 	virtual auto size() const -> std::pair<uint16_t, uint16_t> = 0;
 };
 
-//-- ToDo: Add multi-windowing.
+
 class WindowsService final : public Service<WindowsService>
 {
 public:

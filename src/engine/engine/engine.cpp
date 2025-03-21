@@ -25,7 +25,6 @@ Engine& Engine::instance()
 
 bool Engine::initialize(const int argc, const char* const argv[])
 {
-	//-- ToDo: Think about ordering in plugins.
 	bool initialized = true;
 
 	//-- Some utility stuff.
@@ -61,9 +60,9 @@ void Engine::run()
 		//m_serviceManager.tick();
 
 		auto& sm = m_serviceManager;
-		//-- ToDo: Add hints to reflection and use some graph builder to auto-build order.
+
 		{
-			sm.get<InputService>().tick(); //-- ToDo: Should be before WorldService or service where we handle input.
+			sm.get<InputService>().tick(); //-- Should be before WorldService or service where we handle input.
 			sm.get<ImGUIService>().tick(); //-- Should be before any service which may use ImGui.
 			sm.get<EditorService>().tick();
 			sm.get<WorldService>().tick();

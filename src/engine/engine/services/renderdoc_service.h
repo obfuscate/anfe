@@ -18,7 +18,7 @@ public:
 	void setActiveWindow(void* device, void* wnd);
 	void captureFrames(std::string_view path, const uint32_t numFrames);
 
-public: //-- ToDo: Think about how to hide this function from public access.
+public:
 	static bool createCondition();
 
 private:

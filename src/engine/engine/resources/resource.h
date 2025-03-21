@@ -18,7 +18,6 @@ public:
 	Status status() const { return m_status; }
 	bool ready() const { return status() == Status::Ready; }
 
-	//-- ToDO: Reconsider later.
 	void setStatus(const Status status) { m_status = status; }
 
 protected:

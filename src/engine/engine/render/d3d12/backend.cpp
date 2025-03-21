@@ -183,7 +183,7 @@ bool Backend::initialize(const Desc& desc)
 	swapChainDesc.BufferCount = desc.numBuffers;
 	swapChainDesc.Width = desc.width;
 	swapChainDesc.Height = desc.height;
-	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; //-- ToDo: Use sRGB?
+	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; //-- Use sRGB is incompatible with FLIP mode.
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; //-- we want to use the flip model to present frames on the screen.
 	swapChainDesc.SampleDesc.Count = 1;
@@ -369,15 +369,14 @@ bool Backend::initialize(const Desc& desc)
 		}
 
 		//-- Define the vertex input layout.
-		//-- ToDo: Use reflection.
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 		{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, //-- ToDo: pack TBN.
+			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 4, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, //-- ToDo: Use r16g16.
-			{ "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 5, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }, //-- ToDo: Use r16g16.
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 4, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 5, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 6, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 		};
 		auto vertexShader = shader->shader(resources::ShaderResource::Type::Vertex);
@@ -645,7 +644,7 @@ void Backend::present()
 		// Rotate the cube around the Y-axis
 		auto rot = math::matrix::CreateRotationY(m_curRotationAngleRad);
 		auto scale = math::matrix::CreateScale(0.05f);
-		m_worldMatrix = scale * rot; //-- ToDo: Just create a ctor.
+		m_worldMatrix = scale * rot;
 		//math::matrix::Create
 	}
 

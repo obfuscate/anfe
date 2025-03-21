@@ -157,7 +157,7 @@ bool WindowsService::initialize()
 		auto pos = s.find("x");
 		auto sWidth = s.substr(0, pos);
 		auto sHeight = s.substr(pos + 1);
-		//-- ToDo: scanf of another solution?
+
 		desc.width = static_cast<uint16_t>(std::stoi(sWidth));
 		desc.height = static_cast<uint16_t>(std::stoi(sHeight));
 	}

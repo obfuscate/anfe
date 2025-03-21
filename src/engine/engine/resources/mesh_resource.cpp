@@ -5,7 +5,7 @@
 #include <engine/services/vfs_service.h>
 #include <engine/render/d3d12/backend.h>
 
-#include <ufbx/ufbx.h> //-- ToDo: Add the natvis file.
+#include <ufbx/ufbx.h>
 
 #define ENABLE_READ_SKINNING 0
 #define ENABLE_READ_ANIMATION 0

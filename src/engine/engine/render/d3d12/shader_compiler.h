@@ -18,7 +18,6 @@ public:
 	ENGINE_API resources::ShaderResourcePtr compile(std::string_view path) override;
 
 private:
-	//-- ToDo: Make common.
 	struct Blob
 	{
 		void initialize(const size_t size)

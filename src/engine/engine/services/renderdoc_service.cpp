@@ -16,7 +16,7 @@ namespace
 META_REGISTRATION
 {
 	reflection::Service<RenderDocService>("RenderDocService")
-		.cli({"-rdoc"}); //-- ToDo: introduce a separated structure CommandLineArgument.
+		.cli({"-rdoc"});
 }
 
 
