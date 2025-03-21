@@ -68,7 +68,7 @@ void RenderService::CommandListPool::submit()
 }
 
 
-bool RenderService::initialize()
+bool RenderService::initialize(const Engine::Config::RenderParams& params)
 {
 	auto& ws = service<WindowsService>();
 	auto& cli = service<CLIService>().parser();
@@ -106,7 +106,7 @@ bool RenderService::initialize()
 	//-- For the majority of applications, this is convenient and works well.
 	//-- However, there will be certain cases where an application may want to queue up more frames than there are back buffers available.
 	//-- It should be noted that excessive buffering of frames dependent on user input may result in noticeable latency in your app.
-	desc.numBuffers = 2;
+	desc.numBuffers = params.numBackBuffers;
 	desc.hwnd = ws.mainWindow()->handle();
 	auto [w, h] = ws.mainWindow()->size();
 	desc.width = w;

@@ -43,7 +43,7 @@ public:
 	WindowsService() = default;
 	~WindowsService() = default;
 
-	bool initialize() override;
+	bool initialize();
 	void release() override;
 
 	WindowWrapper* createWindow(const WindowDesc& desc);

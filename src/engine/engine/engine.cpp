@@ -23,15 +23,15 @@ Engine& Engine::instance()
 }
 
 
-bool Engine::initialize(const int argc, const char* const argv[])
+bool Engine::initialize(const Config& config)
 {
 	bool initialized = true;
 
 	//-- Some utility stuff.
 	initialized &= m_serviceManager.add<AssertService>();
-	initialized &= m_serviceManager.add<CLIService>(argc, argv);
+	initialized &= m_serviceManager.add<CLIService>(config.cliParams);
 	initialized &= m_serviceManager.add<LogService>();
-	initialized &= m_serviceManager.add<VFSService>();
+	initialized &= m_serviceManager.add<VFSService>(config.vfsParams);
 
 	//-- ECS stuff.
 	initialized &= m_serviceManager.add<WorldService>();
@@ -42,7 +42,7 @@ bool Engine::initialize(const int argc, const char* const argv[])
 
 	//-- Render stuff.
 	initialized &= m_serviceManager.add<render::RenderDocService>(); //-- Should be initialized before any GAPI initialization.
-	initialized &= m_serviceManager.add<RenderService>();
+	initialized &= m_serviceManager.add<RenderService>(config.renderParams);
 
 	//-- Other (?) stuff.
 	initialized &= m_serviceManager.add<ImGUIService>(); //-- Should be after RenderService, because it uses RS to retrive some handles. Destroy before RenderService.

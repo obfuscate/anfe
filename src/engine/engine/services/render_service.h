@@ -1,5 +1,6 @@
 #pragma once
 
+#include <engine/engine.h>
 #include <engine/services/service_manager.h>
 #include <engine/render/render_backend.h>
 
@@ -37,7 +38,7 @@ public:
 	RenderService() = default;
 	~RenderService() = default;
 
-	bool initialize() override;
+	bool initialize(const Engine::Config::RenderParams& params);
 	void release() override;
 
 	void postTick() override;

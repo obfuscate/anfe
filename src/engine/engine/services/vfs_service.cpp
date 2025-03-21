@@ -13,7 +13,7 @@ META_REGISTRATION
 }
 
 
-bool VFSService::initialize()
+bool VFSService::initialize(const Engine::Config::VFSParams& params)
 {
 	auto& cli = service<CLIService>().parser();
 	std::string rootFolder;
@@ -24,18 +24,35 @@ bool VFSService::initialize()
 		return false;
 	}
 
-	vfspp::IFileSystemPtr rootFS = nullptr;
-
-#if defined(DISTRIBUTION_BUILD)
-	rootFS = std::make_unique<ZipFileSystem>(rootFolder + "/resources.zip");
-#else
-	rootFS = std::make_unique<vfspp::NativeFileSystem>(rootFolder + "/resources");
-#endif
-
-	rootFS->Initialize();
-
 	m_vfs = std::make_shared<vfspp::VirtualFileSystem>();
-	m_vfs->AddFileSystem("/", std::move(rootFS));
+	for (auto& alias : params.aliases)
+	{
+		vfspp::IFileSystemPtr fs = nullptr;
+
+		auto path = rootFolder + alias.relativePath.data();
+		switch (alias.type)
+		{
+		case Engine::Config::VFSParams::Alias::Type::Native:
+		{
+			fs = std::make_unique<vfspp::NativeFileSystem>(path);
+			break;
+		}
+		case Engine::Config::VFSParams::Alias::Type::BuildZip:
+		{
+			fs = std::make_unique<vfspp::ZipFileSystem>(path);
+			break;
+		}
+		default:
+		{
+			ENGINE_FAIL("Not implemented yet alias type!");
+			break;
+		}
+		}
+
+		fs->Initialize();
+
+		m_vfs->AddFileSystem(std::string(alias.alias), std::move(fs));
+	}
 
 	return true;
 }

@@ -12,7 +12,7 @@ public:
 	RenderDocService() = default;
 	~RenderDocService() = default;
 
-	bool initialize() override;
+	bool initialize();
 	void release() override;
 
 	void setActiveWindow(void* device, void* wnd);

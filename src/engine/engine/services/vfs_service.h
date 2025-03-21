@@ -1,5 +1,6 @@
 #pragma once
 
+#include <engine/engine.h>
 #include <engine/services/service_manager.h>
 #include <vfspp/VFS.h>
 
@@ -14,7 +15,7 @@ public:
 	VFSService() = default;
 	~VFSService() = default;
 
-	bool initialize() override;
+	bool initialize(const Engine::Config::VFSParams& params);
 	void release() override;
 
 	inline std::string absolutePath(std::string_view relativePath) const

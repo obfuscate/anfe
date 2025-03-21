@@ -11,7 +11,7 @@ public:
 	AssertService() = default;
 	~AssertService() = default;
 
-	bool initialize() override;
+	bool initialize();
 	void release() override;
 
 private:

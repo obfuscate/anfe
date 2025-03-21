@@ -11,7 +11,7 @@ public:
 	WorldService() = default;
 	~WorldService() = default;
 
-	bool initialize() override;
+	bool initialize();
 	void release() override;
 
 	void tick() override;

@@ -32,7 +32,6 @@ public:
 	IService(Type typeId) : m_typeId(typeId) { }
 	virtual ~IService() = default;
 
-	virtual bool initialize() = 0;
 	virtual void release() {}
 	virtual void tick() {}
 	virtual void postTick() {}
@@ -84,8 +83,10 @@ public:
 			m_services.resize(serviceId + 1);
 		}
 
-		m_services[serviceId] = std::make_unique<T>(std::forward<Args>(args)...);
-		return m_services[serviceId]->initialize();
+		m_services[serviceId] = std::make_unique<T>();
+		T& service = *static_cast<T*>(m_services[serviceId].get());
+
+		return service.initialize(std::forward<Args>(args)...);
 	}
 
 	template<typename TService>

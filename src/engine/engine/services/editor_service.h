@@ -11,7 +11,7 @@ public:
 	EditorService() = default;
 	~EditorService() = default;
 
-	bool initialize() override { return true; }
+	bool initialize() { return true; }
 	void release() override {};
 
 	void tick() override;

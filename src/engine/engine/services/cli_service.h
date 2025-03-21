@@ -1,7 +1,7 @@
 #pragma once
 
+#include <engine/engine.h>
 #include <engine/services/service_manager.h>
-
 #include <argh/argh.h>
 
 namespace engine
@@ -10,17 +10,15 @@ namespace engine
 class CLIService final : public Service<CLIService>
 {
 public:
-	CLIService(const int argc, const char* const argv[]);
+	CLIService();
 	~CLIService() = default;
 
-	bool initialize() override;
+	bool initialize(const Engine::Config::CLIParams& params);
 
 	const argh::parser& parser() const { return m_parser; }
 
 private:
 	argh::parser m_parser;
-	const char* const* m_argv = nullptr;
-	const int m_argc = 0;
 };
 
 } //-- engine.

@@ -43,7 +43,7 @@ public:
 	ImGUIService() = default;
 	~ImGUIService() = default;
 
-	bool initialize() override;
+	bool initialize();
 	void release() override;
 
 	void tick() override;

@@ -13,7 +13,7 @@ public:
 	InputService() = default;
 	~InputService() = default;
 
-	bool initialize() override;
+	bool initialize();
 	void release() override;
 
 	void tick() override;

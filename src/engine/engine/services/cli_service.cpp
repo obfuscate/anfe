@@ -17,14 +17,12 @@ META_REGISTRATION
 } //-- unnamed.
 
 
-CLIService::CLIService(const int argc, const char* const argv[])
+CLIService::CLIService()
 	: Service()
-	, m_parser()
-	, m_argv(argv)
-	, m_argc(argc) { }
+	, m_parser() { }
 
 
-bool CLIService::initialize()
+bool CLIService::initialize(const Engine::Config::CLIParams& params)
 {
 	auto baseService = rttr::type::get<IService>();
 	for (auto child : baseService.get_derived_classes())
@@ -40,7 +38,7 @@ bool CLIService::initialize()
 	}
 
 	const int flags = argh::parser::PREFER_FLAG_FOR_UNREG_OPTION;
-	m_parser.parse(m_argc, m_argv, flags);
+	m_parser.parse(params.numArguments, params.arguments, flags);
 
 #if OUTPUT_DEBUG_CLI
 	for (auto& flag : m_parser.flags())
