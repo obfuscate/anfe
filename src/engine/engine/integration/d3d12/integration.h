@@ -9,6 +9,7 @@
 #include <wrl.h>
 
 #include <engine/integration/d3d12/d3dx12.h>
+#include <engine/integration/d3d12/D3D12MemAlloc.h>
 #include <engine/assert.h>
 
 inline void assertIfFailed(HRESULT hr)

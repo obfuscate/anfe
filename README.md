@@ -6,6 +6,7 @@
 
 ## 3rd party libs
 * [argh](https://github.com/skypjack/entt)
+* [D3D12MA](https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator)
 * [DirectXTK::SimpleMath](https://github.com/microsoft/DirectXTK12)
 * [dxc](https://github.com/microsoft/DirectXShaderCompiler)
 * [flecs](https://github.com/SanderMertens/flecs)
