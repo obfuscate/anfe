@@ -661,6 +661,7 @@ void Backend::moveToNextFrame()
 
 void Backend::present()
 {
+	ENGINE_CPU_ZONE;
 	//-- UPDATE. REMOVE.
 	{
 		const float rotationSpeed = 0.015f;

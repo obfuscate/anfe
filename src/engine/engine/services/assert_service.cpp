@@ -1,5 +1,4 @@
 #include <engine/services/assert_service.h>
-#include <engine/engine.h>
 #include <engine/helpers.h>
 #include <engine/reflection/registration.h>
 #include <engine/services/log_service.h>

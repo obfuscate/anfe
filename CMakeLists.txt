@@ -62,13 +62,20 @@ set(MSVC_DEFINES
 	_CONSOLE
 )
 
-set(DEFINES
-	LIBASSERT_USE_FMT
-)
+set(3RD_PARTY_DEFINES)
+
+# libassert
+set(3RD_PARTY_DEFINES ${3RD_PARTY_DEFINES} LIBASSERT_USE_FMT)
+
+# Tracy
+# You should note that if on-demand profiling is disabled (which is the default), then the recorded events
+# will be stored in the system memory until a server connection is made and the data can be uploaded
+# Also, it requires disabled /ZI.
+set(3RD_PARTY_DEFINES ${3RD_PARTY_DEFINES} TRACY_ENABLE TRACY_ON_DEMAND)
 
 # Global preprocessor definitions
 target_compile_definitions(GlobalOptions INTERFACE $<$<CXX_COMPILER_ID:MSVC>:${MSVC_DEFINES}>)
-target_compile_definitions(GlobalOptions INTERFACE ${DEFINES})
+target_compile_definitions(GlobalOptions INTERFACE ${3RD_PARTY_DEFINES})
 
 target_link_options(GlobalOptions INTERFACE
 	/INCREMENTAL:NO		# Disable incremental linking

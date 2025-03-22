@@ -33,6 +33,8 @@ void InputService::release()
 
 void InputService::tick()
 {
+	ENGINE_CPU_ZONE;
+
 	//-- ToDo: Register callbacks and handle events in specific places.
 	SDL_Event windowEvent;
 	if (SDL_PollEvent(&windowEvent))
@@ -66,6 +68,7 @@ void InputService::tick()
 
 void InputService::postTick()
 {
+	ENGINE_CPU_ZONE;
 	//m_input->Reset();
 }
 

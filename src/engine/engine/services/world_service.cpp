@@ -6,7 +6,6 @@
 #include <engine/services/windows_service.h>
 
 #include <imgui.h>
-#include <string_view>
 
 namespace engine
 {
@@ -32,6 +31,7 @@ void WorldService::release()
 
 void WorldService::tick()
 {
+	ENGINE_CPU_ZONE;
 	/*auto& rs = service<RenderService>();
 	auto* commandList = rs.commandListPool().requestCommandList();
 	auto& swapChain = *service<WindowsService>().mainWindow()->swapChain;

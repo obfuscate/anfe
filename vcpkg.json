@@ -43,6 +43,13 @@
 			"version>=": "1.15.1"
 		},
 		{
+			"name": "tracy",
+			"version>=": "0.11.1",
+			"features": [
+				"gui-tools", "on-demand"
+			]
+		},
+		{
 			"name": "ufbx",
 			"version>=": "0.17.1"
 		},

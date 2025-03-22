@@ -36,5 +36,5 @@ PSInput vs_main(VSInput i)
 
 float4 ps_main(PSInput i) : SV_TARGET0
 {
-	return i.color;
+	return float4(i.uv, 0.0f, 1.0f);
 }

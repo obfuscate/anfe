@@ -137,6 +137,7 @@ void RenderService::release()
 
 void RenderService::postTick()
 {
+	ENGINE_CPU_ZONE;
 	m_backend->present();
 }
 

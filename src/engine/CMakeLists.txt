@@ -18,6 +18,10 @@ target_link_libraries(engine PUBLIC libassert::assert)
 find_package(rttr CONFIG REQUIRED)
 target_link_libraries(engine PUBLIC RTTR::Core)
 
+# Tracy
+find_package(Tracy CONFIG REQUIRED)
+target_link_libraries(engine PUBLIC Tracy::TracyClient)
+
 # DirectX
 # Alternatively we can #include <initguid.h> before #include <d3d12.h>
 target_link_libraries(engine PUBLIC d3d12.lib dxgi.lib dxguid.lib)

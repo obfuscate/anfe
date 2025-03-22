@@ -15,8 +15,11 @@
 //-- fmt.
 #include <fmt/core.h>
 
-//-- SDL3
+//-- SDL3.
 #include <SDL3/SDL.h>
+
+//-- Tracy.
+#include <engine/integration/tracy/integration.h>
 
 #include <engine/export.h>
 

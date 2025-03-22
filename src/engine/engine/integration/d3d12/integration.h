@@ -16,6 +16,9 @@
 #include <engine/integration/d3d12/D3D12MemAlloc.h>
 #include <engine/assert.h>
 
+//-- Tracy integration.
+#include <tracy/TracyD3D12.hpp>
+
 inline void assertIfFailed(HRESULT hr)
 {
 	ENGINE_ASSERT(SUCCEEDED(hr));

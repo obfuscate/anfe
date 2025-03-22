@@ -1,5 +1,6 @@
 #pragma once
 
+#include <engine/utils/noncopyable.h>
 #include <engine/services/service_manager.h>
 
 namespace engine

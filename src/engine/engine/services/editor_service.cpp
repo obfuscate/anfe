@@ -18,6 +18,7 @@ META_REGISTRATION
 
 void EditorService::tick()
 {
+	ENGINE_CPU_ZONE;
 	//ImGui::ShowDemoWindow();
 }
 

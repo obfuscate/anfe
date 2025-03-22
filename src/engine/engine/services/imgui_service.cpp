@@ -369,6 +369,7 @@ void ImGUIService::release()
 
 void ImGUIService::tick()
 {
+	ENGINE_CPU_ZONE;
 	/*auto& swapChain = *service<WindowsService>().mainWindow()->swapChain;
 	m_commandList->Begin();
 	m_commandList->BeginRenderPass(swapChain);
@@ -385,6 +386,7 @@ void ImGUIService::tick()
 
 void ImGUIService::postTick()
 {
+	ENGINE_CPU_ZONE;
 	/*ImGui::Render();
 	m_backend->endFrame(m_commandList);
 

@@ -18,5 +18,6 @@
 * [RTTR](https://github.com/rttrorg/rttr)
 * [SDL3](https://github.com/libsdl-org/SDL)
 * [spdlog](https://github.com/gabime/spdlog)
+* [Tracy](https://github.com/wolfpld/tracy)
 * [ufbx](https://github.com/ufbx/ufbx)
 * [vfspp](https://github.com/nextgeniuspro/vfspp)

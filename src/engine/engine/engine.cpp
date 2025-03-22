@@ -57,11 +57,14 @@ void Engine::run()
 	m_run = true;
 	while (m_run)
 	{
+		ENGINE_CPU_ZONE_NAMED("Engine::Frame");
 		//m_serviceManager.tick();
 
 		auto& sm = m_serviceManager;
 
 		{
+			ENGINE_CPU_ZONE_NAMED("ServiceManager::tick");
+
 			sm.get<InputService>().tick(); //-- Should be before WorldService or service where we handle input.
 			sm.get<ImGUIService>().tick(); //-- Should be before any service which may use ImGui.
 			sm.get<EditorService>().tick();
@@ -72,12 +75,15 @@ void Engine::run()
 
 		//-- post tick.
 		{
+			ENGINE_CPU_ZONE_NAMED("ServiceManager::postTick()");
 			sm.get<ImGUIService>().postTick(); //-- Should be after any service which may use ImGui and before RenderService.
 			sm.get<RenderService>().postTick();
 			sm.get<InputService>().postTick();
 		}
 		//timer.MeasureTime();
 		//UpdateScene(static_cast<float>(timer.GetDeltaTime()));
+
+		FrameMark;
 	}
 
 	release();
