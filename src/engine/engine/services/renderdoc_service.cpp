@@ -149,7 +149,7 @@ bool RenderDocService::initialize()
 		[[maybe_unused]] const int ret = getAPI(eRENDERDOC_API_Version_1_6_0, (void**)&m_api);
 		ENGINE_ASSERT(ret == 1, "Couldn't initialize RenderDoc API");
 
-		m_api->SetCaptureFilePathTemplate("../../../.temp/gpu_captures/capture\0");
+		m_api->SetCaptureFilePathTemplate("../../.temp/gpu_captures/capture\0");
 
 		m_api->SetFocusToggleKeys(NULL, 0);
 		m_api->SetCaptureKeys(NULL, 0);

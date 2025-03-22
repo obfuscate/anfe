@@ -115,8 +115,8 @@ void readMesh(MeshResource& mesh, MeshResource::Submesh& submesh, ufbx_mesh_part
 		ufbxMesh->vertex_tangent.exists,
 		ufbxMesh->vertex_bitangent.exists,
 		ufbxMesh->vertex_normal.exists,
-		numUVSets > 1,
-		numUVSets > 2,
+		numUVSets >= 1,
+		numUVSets >= 2,
 		ufbxMesh->vertex_color.exists
 	};
 
