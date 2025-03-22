@@ -29,9 +29,10 @@ endfunction()
 function(set_library target)
 	file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 	file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/*.inl")
+	file(GLOB_RECURSE natvises CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.natvis")
 
 	add_library(${target} SHARED)
-	target_sources(${target} PUBLIC ${headers} PRIVATE ${sources})
+	target_sources(${target} PUBLIC ${headers} PRIVATE ${sources} ${natvises})
 
 	target_include_directories(${target} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -45,7 +46,7 @@ function(set_library target)
 	target_sources(${target} PUBLIC ${binary_dir}/generated/cxx/${target}/export.h)
 	target_include_directories(${target} PUBLIC ${binary_dir}/generated/cxx)
 
-	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX "Sources" FILES ${sources} ${headers})
+	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX "Sources" FILES ${sources} ${headers} ${natvises})
 	source_group(TREE ${binary_dir}/generated/cxx PREFIX "Sources" FILES ${binary_dir}/generated/cxx/${target}/export.h)
 
 	target_precompile_headers(${target} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${target}/pch.h")
