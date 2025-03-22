@@ -137,6 +137,13 @@ inline size_t calculateConstantBufferByteSize(size_t byteSize)
 
 bool Backend::initialize(const Desc& desc)
 {
+	//-- ToDo: Look at ID3D12InfoQueue  ?
+#if 0
+	D3D12_MESSAGE_ID denyIDs[] = {
+		D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED, // It triggers a break exception during the first call to CreateCommittedResource.
+	};
+#endif
+
 	m_shaderCompiler.initialize();
 
 	uint32_t dxgiFactoryFlags = 0;
@@ -165,6 +172,20 @@ bool Backend::initialize(const Desc& desc)
 
 	ok = D3D12CreateDevice(hardwareAdapter.Get(), featureLevel, IID_PPV_ARGS(&m_device));
 	ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a D3D12 device.");
+
+	//-- AMD Memory Allocator.
+	D3D12MA::ALLOCATOR_DESC allocatorDesc = {};
+	allocatorDesc.pDevice = m_device.Get();
+	allocatorDesc.pAdapter = hardwareAdapter.Get();
+	allocatorDesc.Flags = static_cast<D3D12MA::ALLOCATOR_FLAGS>(D3D12MA::ALLOCATOR_FLAGS::ALLOCATOR_FLAG_DEFAULT_POOLS_NOT_ZEROED
+		| D3D12MA::ALLOCATOR_FLAGS::ALLOCATOR_FLAG_MSAA_TEXTURES_ALWAYS_COMMITTED);
+	//-- ALLOCATOR_FLAG_SINGLETHREADED
+	//-- ALLOCATOR_FLAG_ALWAYS_COMMITTED
+
+	D3D12MA::Allocator* allocator = nullptr;
+	ok = D3D12MA::CreateAllocator(&allocatorDesc, &allocator);
+	ENGINE_ASSERT(SUCCEEDED(ok), "Can't create a D3D12 memory allocator");
+	m_memoryAllocator.Attach(allocator);
 
 	//-- Describe and create the command queue.
 	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
@@ -588,6 +609,16 @@ void Backend::release()
 	waitForGPU();
 
 	CloseHandle(m_fenceEvent);
+
+	m_depthStencil.Reset();
+	m_testTexture.Reset();
+	m_perCameraConstants.Reset();
+	m_perObjectConstants.Reset();
+	m_renderTargets.clear();
+	m_meshResource.reset();
+
+	m_swapChain.Reset();
+	m_memoryAllocator->Release();
 	m_device.Reset();
 }
 

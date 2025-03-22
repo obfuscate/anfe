@@ -44,7 +44,9 @@ private:
 	using Resources = std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>>;
 	using CommandAllocators = std::vector<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>>;
 
-	Microsoft::WRL::ComPtr<ID3D12Device> m_device;
+	Microsoft::WRL::ComPtr<ID3D12Device14> m_device;
+	Microsoft::WRL::ComPtr<D3D12MA::Allocator> m_memoryAllocator = nullptr;
+
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> m_swapChain;
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_graphicsCommandQueue;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvHeap; //-- ToDo: Write a wrapper for this.

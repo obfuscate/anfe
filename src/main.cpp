@@ -1,5 +1,11 @@
 #include <engine/engine.h>
 
+//-- DirectX Agility SDK
+#include <wtypes.h>
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 615; }
+//-- Remember to also remove the debug layer (D3D12SDKLayers.dll) from your application's installer.
+extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\D3D12\\"; }
+
 int main(int argc, char* argv[])
 {
 	auto& engine = engine::engine();

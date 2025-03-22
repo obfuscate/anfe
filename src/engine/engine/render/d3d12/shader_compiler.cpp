@@ -192,8 +192,8 @@ bool ShaderCompiler::compile(const Blob& blob, const std::string& absolutePath, 
 {
 	static constexpr std::array<LPCWSTR, static_cast<uint8_t>(resources::ShaderResource::Type::Count)> kPostfixes = { L".vs", L".ps", L".cs", L".as", L".ms"};
 	static constexpr std::array<LPCWSTR, static_cast<uint8_t>(resources::ShaderResource::Type::Count)> kEntryPoints = { L"vs_main", L"ps_main", L"cs_main", L"as_main", L"ms_main"};
-	//-- ToDo: Reconsider later. version 6.8 is available for dxc, but CreateGraphicsPipelineState fails with it and says that 6.5 is max.
-	static constexpr std::array<LPCWSTR, static_cast<uint8_t>(resources::ShaderResource::Type::Count)> kTargets = { L"vs_6_5", L"ps_6_5", L"cs_6_5", L"as_6_5", L"ms_6_5"};
+	//-- Agility SDK 615 supports 6_8. Without it we have to switch to 6_5.
+	static constexpr std::array<LPCWSTR, static_cast<uint8_t>(resources::ShaderResource::Type::Count)> kTargets = { L"vs_6_8", L"ps_6_8", L"cs_6_8", L"as_6_8", L"ms_6_8"};
 
 	std::wstring wPath = utils::convertToWideString(absolutePath.data());
 

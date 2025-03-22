@@ -116,4 +116,13 @@ endforeach()
 
 # Default CLI.
 set_target_properties(main_launcher PROPERTIES 
-    VS_DEBUGGER_COMMAND_ARGUMENTS "--gapi dx12 -logstd --rootFolder ${CMAKE_SOURCE_DIR}")
+	VS_DEBUGGER_COMMAND_ARGUMENTS "--gapi dx12 -logstd --rootFolder ${CMAKE_SOURCE_DIR}")
+
+# You could also just generate the exe in the target directory directly by setting the target
+# property RUNTIME_OUTPUT_DIRECTORY instead of copying it.
+# This has per-configuration options (e.g. RUNTIME_OUTPUT_DIRECTORY_DEBUG).
+#set_target_properties(mylibrary PROPERTIES
+#	RUNTIME_OUTPUT_DIRECTORY_DEBUG <debug path>
+#	RUNTIME_OUTPUT_DIRECTORY_RELEASE <release path>
+#)
+
